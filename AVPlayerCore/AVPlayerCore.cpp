@@ -203,8 +203,10 @@ bool CAVPlayerCore::IsPlaying() const
 void CAVPlayerCore::Pause(bool bPause)
 {
 	m_bPaused = bPause;
-	m_pVideoPlayer->Pause(bPause);
-	m_pAudioPlayer->Pause(bPause);
+	if (m_pVideoPlayer)
+		m_pVideoPlayer->Pause(bPause);
+	if (m_pAudioPlayer)
+		m_pAudioPlayer->Pause(bPause);
 }
 
 bool CAVPlayerCore::IsPaused() const
@@ -228,22 +230,28 @@ void CAVPlayerCore::Seek(int nPos)
 
 void CAVPlayerCore::SetVolume(int nVolume)
 {
-	m_pAudioPlayer->SetVolume(nVolume);
+	if (m_pAudioPlayer)
+		m_pAudioPlayer->SetVolume(nVolume);
 }
 
 int CAVPlayerCore::GetVolume() const
 {
-	return m_pAudioPlayer->GetVolume();
+	if (m_pAudioPlayer)
+		return m_pAudioPlayer->GetVolume();
+	return 0;
 }
 
 void CAVPlayerCore::SetMuted(bool bMuted)
 {
-	m_pAudioPlayer->SetMuted(bMuted);
+	if (m_pAudioPlayer)
+		m_pAudioPlayer->SetMuted(bMuted);
 }
 
 bool CAVPlayerCore::IsMuted() const
 {
-	return m_pAudioPlayer->IsMuted();
+	if (m_pAudioPlayer)
+		return m_pAudioPlayer->IsMuted();
+	return true;
 }
 
 void CAVPlayerCore::SetPanormaicType(PLAY_MODE type)
