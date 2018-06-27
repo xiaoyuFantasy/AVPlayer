@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Window size="700, 450" roundcorner="2,2" caption="0,0,0,30" sizebox="4,4,4,4">
+    <Font name="微软雅黑" id="14" size="14" bold="false" italic="false" />
+    <VerticalLayout>
+        <HorizontalLayout height="30" bkimage="image\bkg\caption_bk.png" bkcolor="#FF0E1A2F" bkcolor2="#FF060606" >
+            <Label name="video_name" padding="10,0,0,0" text="视频" font="14" textcolor="0xFFFFFFFF" />
+            <HorizontalLayout width="90" >
+                <Button name="minbtn" 
+                    tooltip="最小化" 
+                    width="27" 
+                    height="30" 
+                    bkimage="file='image\button\btn_minmax.png' source='45,0,60,15' dest='6,8,21,23' " 
+                    hotimage="file='image\button\btn_style_minmax.png' source='27,0,54,30'" 
+                    pushedimage="file='image\button\btn_style_minmax.png' source='54,0,81,30'" />
+                <Button name="maxbtn" 
+                    tooltip="最大化"  
+                    width="27" height="30" 
+                    bkimage="file='image\button\btn_minmax.png' source='60,0,75,15' dest='6,8,21,23' " 
+                    hotimage="file='image\button\btn_style_minmax.png' source='27,0,54,30'" 
+                    pushedimage="file='image\button\btn_style_minmax.png' source='54,0,81,30'" />
+                <Button name="restorebtn" 
+                    tooltip="还原" 
+                    visible="false" 
+                    width="27" 
+                    height="31" 
+                    bkimage="file='image\button\btn_minmax.png' source='75,0,90,15' dest='6,8,21,23' " 
+                    hotimage="file='image\button\btn_style_minmax.png' source='27,0,54,30'" 
+                    pushedimage="file='image\button\btn_style_minmax.png' source='54,0,81,30'" />
+                <Button name="closebtn" 
+                    tooltip="关闭" 
+                    width="36" 
+                    height="30" 
+                    bkimage="file='image\button\btn_minmax.png' source='90,0,105,15' dest='11,8,26,23' "
+                    hotimage="file='image\button\btn_style_close.png' source='36,0,72,30'" 
+                    pushedimage="file='image\button\btn_style_close.png' source='72,0,108,30'" />
+            </HorizontalLayout>
+        </HorizontalLayout>
+        <VerticalLayout bkcolor="0xFF000000">
+            <PlayerWindow name="video_player" visible="false" />
+        </VerticalLayout>
+        <VerticalLayout bkcolor="#FF070707" height="20">
+            <Slider name="sliderPlay" padding="10,0,10,0" enabled="false" height="20" bkimage="image\slider\SliderBack.png" foreimage="image\slider\SliderFore.png" min="0" max="1000" value="0" hor="true"  thumbhotimage="file='image\slider\SliderBar.png' source='21,0,41,20'" thumbpushedimage="file='image\slider\SliderBar.png' source='42,0,62,20'" thumbsize="20,20" />
+        </VerticalLayout>
+        <VerticalLayout height="48" bkcolor="#FF070707">
+            <HorizontalLayout>
+                <HorizontalLayout>
+                    <Control />
+                    <Button name="btnStop" padding="0,4,0,0" enabled="false" tooltip="停止" width="40" height="40" normalimage="file='image\button\btn_stop.png' source='0,0,40,40'" hotimage="file='image\button\btn_stop.png' source='41,0,81,40'" pushedimage="file='image\button\btn_stop.png' source='82,0,122,40'" disabledimage="file='image\button\btn_stop.png' source='123,0,163,40'" />
+                </HorizontalLayout>
+                <HorizontalLayout width="128" >
+                    <Button name="btnPrevious" padding="0,4,0,0" tooltip="上一个" width="40" height="40" normalimage="file='image\button\btn_previous.png' source='0,0,40,40'" hotimage="file='image\button\btn_previous.png' source='41,0,81,40'" pushedimage="file='image\button\btn_previous.png' source='82,0,122,40'" />
+                    <Button name="btnPlay" tooltip="播放" width="48" height="48" normalimage="file='image\button\btn_play.png' source='0,0,48,50'" hotimage="file='image\button\btn_play.png' source='49,0,97,48'" pushedimage="file='image\button\btn_play.png' source='98,0,146,48'" />
+                    <Button name="btnPause" tooltip="暂停" visible="false" width="48" height="48" normalimage="file='image\button\btn_pause.png' source='0,0,48,50'" hotimage="file='image\button\btn_pause.png' source='49,0,97,48'" pushedimage="file='image\button\btn_pause.png' source='98,0,146,48'" />
+                    <Button name="btnNext" padding="0,4,0,0" tooltip="下一个" width="40" height="40" normalimage="file='image\button\btn_next.png' source='0,0,40,40'" hotimage="file='image\button\btn_next.png' source='41,0,81,40'" pushedimage="file='image\button\btn_next.png' source='82,0,122,40'" />
+                </HorizontalLayout>
+                <HorizontalLayout>
+                    <Button name="btnVolume" padding="10,16,5,0" tooltip="静音" width="16" height="16" normalimage="file='image\button\btn_volume.png' source='0,0,16,16'" hotimage="file='image\button\btn_volume.png' source='17,0,33,16'" pushedimage="file='image\button\btn_volume.png' source='34,0,50,16'" />
+                    <Button name="btnVolumeZero" padding="10,16,5,0" tooltip="取消静音" visible="false" width="16" height="16" normalimage="file='image\button\btn_volume_zero.png' source='0,0,16,16'" hotimage="file='image\button\btn_volume_zero.png' source='17,0,33,16'" pushedimage="file='image\button\btn_volume_zero.png' source='34,0,50,16'" />
+                    <Slider name="sliderVol" padding="0,14,0,0" width="85" height="20"  min="0" max="128" value="60" bkimage="image\slider\SliderBackVolume.png"  foreimage="image\slider\SliderForeVolume.png" hor="true" thumbimage="file='image\slider\SliderBar.png' source='0,0,20,20' " thumbhotimage="file='image\slider\SliderBar.png' source='21,0,41,20'" thumbpushedimage="file='image\slider\SliderBar.png' source='42,0,62,20'" thumbsize="20,20" />
+                    <Control />
+                </HorizontalLayout>
+            </HorizontalLayout>
+        </VerticalLayout>
+    </VerticalLayout>
+</Window>
