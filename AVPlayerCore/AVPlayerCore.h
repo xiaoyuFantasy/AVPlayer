@@ -29,7 +29,6 @@ public:
 	void SetPanoramicScroll(float latitude, float longitude);
 	void SetWindowSize(int nWidth, int nHeight);
 
-
 protected:
 	static int interrupt_callback(void * lparam);
 

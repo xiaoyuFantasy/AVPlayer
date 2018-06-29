@@ -4,4 +4,8 @@
     <LocalDebuggerCommandArguments>/spath "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LocalDebuggerCommandArguments>/spath "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600"</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

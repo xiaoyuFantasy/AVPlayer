@@ -15,13 +15,17 @@ void CAVPlayer::Play(PLAYER_OPTS opts)
 {
 	av_log(NULL, AV_LOG_INFO, "AVPlayer");
 	av_log(NULL, AV_LOG_INFO, "Path: %s", opts.strPath.c_str());
-	CAVPlayerCore* pCore = new CAVPlayerCore(opts);
-	m_pPlayerCore = pCore;
-	std::thread([&](CAVPlayerCore** player) {
-		(*player)->Play();
-		delete (*player);
-		(*player) = nullptr;
-	}, &pCore).detach();
+	
+	std::thread([&](PLAYER_OPTS opts) {
+		CAVPlayerCore* pCore = new CAVPlayerCore(opts);
+		m_pPlayerCore = pCore;
+		if (pCore)
+		{
+			pCore->Play();
+			delete pCore;
+			pCore = nullptr;
+		}
+	}, opts).detach();
 }
 
 void CAVPlayer::Stop()
@@ -37,6 +41,7 @@ bool CAVPlayer::IsPlaying() const
 {
 	if (m_pPlayerCore)
 		return m_pPlayerCore->IsPlaying();
+
 	return false;
 }
 
@@ -50,6 +55,7 @@ bool CAVPlayer::IsPaused() const
 {
 	if (m_pPlayerCore)
 		return m_pPlayerCore->IsPaused();
+
 	return false;
 }
 

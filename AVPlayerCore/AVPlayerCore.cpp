@@ -73,7 +73,10 @@ bool CAVPlayerCore::Play()
 		if (m_pAudioPlayer->Open(m_opts))
 			m_bAudioOpen = true;
 		else
+		{
 			delete m_pAudioPlayer;
+			m_pAudioPlayer = nullptr;
+		}
 	}
 
 	if (m_nVideoIndex != -1 && m_opts.bEnableVideo)
@@ -86,7 +89,10 @@ bool CAVPlayerCore::Play()
 			m_bVideoOpen = true;
 		}
 		else
+		{
 			delete m_pVideoPlayer;
+			m_pVideoPlayer = nullptr;
+		}	
 	}
 
 	if (!m_bAudioOpen && !m_bVideoOpen)
@@ -194,8 +200,11 @@ LOAD_ERROR:
 
 bool CAVPlayerCore::IsPlaying() const
 {
-	if (m_pVideoPlayer->IsPlaying() || m_pAudioPlayer->IsPlaying())
-		return true;
+	if (m_pVideoPlayer)
+		return m_pVideoPlayer->IsPlaying();
+
+	if (m_pAudioPlayer)
+		return m_pAudioPlayer->IsPlaying();
 
 	return false;
 }
