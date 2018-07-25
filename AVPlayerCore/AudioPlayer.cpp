@@ -5,7 +5,7 @@
 CAudioPlayer::CAudioPlayer(AVStream* pStream)
 	:m_pStream(pStream)
 	,m_queueFrame(MAX_AUDIO_SIZE)
-	,m_queuePacket(MAX_AUDIO_SIZE)
+	,m_queuePacket(20)
 {
 }
 
@@ -263,7 +263,7 @@ bool CAudioPlayer::OpenAudioDevice()
 
 void CAudioPlayer::DecodeThread()
 {
-	m_threadDecode = std::thread([&]() {
+	/*m_threadDecode = std::thread([&]() {
 		av_log(NULL, AV_LOG_INFO, "Audio Decode Thread");
 		while (!m_bStopDecode && !m_bQuit)
 		{
@@ -299,7 +299,7 @@ void CAudioPlayer::DecodeThread()
 					break;
 			}
 		}
-	});
+	});*/
 }
 
 void CAudioPlayer::audio_callback(void * userData, Uint8 * stream, int len)
@@ -323,11 +323,11 @@ void CAudioPlayer::audio_callback(void * userData, Uint8 * stream, int len)
 		*/
 		if (p->m_nBufferIndex >= p->m_nBufferSize)
 		{
-			audio_size = p->DecodeFrame();
+			audio_size = p->GetFrame();
 			if (audio_size < 0)
 			{
 				p->m_buffer = nullptr;
-				p->m_nBufferIndex = AUDIO_MIN_BUFFER_SIZE / p->m_hwParams.frame_size * p->m_hwParams.frame_size;
+				p->m_nBufferSize = AUDIO_MIN_BUFFER_SIZE / p->m_hwParams.frame_size * p->m_hwParams.frame_size;
 			}
 			else
 			{
@@ -349,12 +349,6 @@ void CAudioPlayer::audio_callback(void * userData, Uint8 * stream, int len)
 			if (!p->m_bMuted && p->m_buffer)
 				SDL_MixAudioFormat(stream, (uint8_t *)p->m_buffer + p->m_nBufferIndex, AUDIO_S16SYS, len1, p->m_nVolume);
 		}
-
-		//if (p->m_buffer)
-		//	//memcpy(stream, (uint8_t *)p->m_buffer + p->m_nBufferIndex, len1);
-		//	SDL_MixAudio(stream, (uint8_t *)p->m_buffer + p->m_nBufferIndex, len1, p->m_nVolume);
-		//else
-		//	memset(stream, 0, len1);
 		
 		len -= len1;
 		stream += len1;
@@ -364,96 +358,131 @@ void CAudioPlayer::audio_callback(void * userData, Uint8 * stream, int len)
 	p->m_pts = p->m_clock - (double)(2 * p->m_hwSize + p->m_nBufferSize - p->m_nBufferIndex) / p->m_hwParams.bytes_per_sec;
 }
 
-int CAudioPlayer::DecodeFrame()
+int CAudioPlayer::GetFrame()
 {
 	int nDataSize, nResampledDataSize;
 	int64_t dec_channel_layout;
 	int wanted_nb_samples;
 
-	while (m_queueFrame.Count() == 0 && !m_bQuit)
-	{
-		if ((av_gettime_relative() - m_nCallbackTime) > 1000000LL * m_nBufferSize / m_hwParams.bytes_per_sec / 2)
-			return -1;
-		av_usleep(1000);
-	}
-
-	if (m_bQuit)
+	if (m_bQuit || m_bPaused)
 		return -1;
 
-	FramePtr frame{ av_frame_alloc(), [](AVFrame* p) { av_frame_free(&p); } };
-
-	if (!m_queueFrame.Pop(frame))
+	FramePtr frame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
+	
+	if (DecodeFrame(frame.get()) < 0)
 		return -1;
 
-	nDataSize = av_samples_get_buffer_size(nullptr, frame->channels, frame->nb_samples, (AVSampleFormat)frame->format, 1);
-	dec_channel_layout = (frame->channel_layout && frame->channels == av_get_channel_layout_nb_channels(frame->channel_layout)) ? frame->channel_layout : av_get_default_channel_layout(frame->channels);
-	wanted_nb_samples = frame->nb_samples;
+	int data_size = 0;
+	int ret = 0;
+	int64_t src_ch_layout = AV_CH_LAYOUT_STEREO; //初始化这样根据不同文件做调整
+	int64_t dst_ch_layout = AV_CH_LAYOUT_STEREO; //这里设定ok
+	int dst_nb_channels = 0;
+	int dst_linesize = 0;
+	int src_nb_samples = 0;
+	int dst_nb_samples = 0;
+	int max_dst_nb_samples = 0;
+	uint8_t **dst_data = NULL;
+	int resampled_data_size = 0;
 
-	if (frame->format != m_hwParams.fmt ||
-		dec_channel_layout != m_hwParams.channel_layout ||
-		frame->sample_rate != m_hwParams.freq ||
-		wanted_nb_samples != frame->nb_samples &&
-		!m_pSwrCtx)
-	{
-		//设置转换参数
-		if (m_pSwrCtx)
-		{
-			swr_free(&m_pSwrCtx);
-			m_pSwrCtx = nullptr;
-		}
-
-		m_pSwrCtx = swr_alloc_set_opts(nullptr,
-			m_hwParams.channel_layout,
-			m_hwParams.fmt,
-			m_hwParams.freq,
-			dec_channel_layout,
-			(AVSampleFormat)frame->format,
-			frame->sample_rate,
-			0,
-			NULL);
-
-		if (!m_pSwrCtx || swr_init(m_pSwrCtx) < 0)
-		{
-			av_log(NULL, AV_LOG_ERROR,
-				"Cannot create sample rate converter for conversion of %d Hz %s %d channels to %d Hz %s %d channels!\n",
-				frame->sample_rate, av_get_sample_fmt_name((AVSampleFormat)frame->format), frame->channels,
-				m_hwParams.freq, av_get_sample_fmt_name(m_hwParams.fmt), m_hwParams.channels);
-			return -1;
-		}
-
-		const uint8_t **in = (const uint8_t **)frame->extended_data;
-		uint8_t *out[] = { m_bufferTemp };
-		int out_count = sizeof(m_bufferTemp) / 2 / av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);;//(int64_t)wanted_nb_samples * m_hwParams.freq / frame->sample_rate + 256;
-		int out_size = av_samples_get_buffer_size(NULL, m_hwParams.channels, out_count, m_hwParams.fmt, 0);
-		if (out_size < 0) {
-			av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size() failed\n");
-			return -1;
-		}
-
-		if (wanted_nb_samples != frame->nb_samples) {
-			if (swr_set_compensation(m_pSwrCtx, (wanted_nb_samples - frame->nb_samples) * m_hwParams.freq / frame->sample_rate,
-				wanted_nb_samples * m_hwParams.freq / frame->sample_rate) < 0) {
-				av_log(NULL, AV_LOG_ERROR, "swr_set_compensation() failed\n");
-				return -1;
-			}
-		}
-
-		int len = swr_convert(m_pSwrCtx, out, out_count, in, frame->nb_samples);
+	//重新采样
+	if (m_pSwrCtx)
 		swr_free(&m_pSwrCtx);
-		if (len < 0) {
-			av_log(NULL, AV_LOG_ERROR, "swr_convert() failed\n");
-			return -1;
-		}
 
-		m_buffer = m_bufferTemp;
-		nResampledDataSize = len * m_hwParams.channels * av_get_bytes_per_sample(m_hwParams.fmt);
-	}
-	else
+	m_pSwrCtx = swr_alloc();
+	if (!m_pSwrCtx)
 	{
-		m_buffer = frame->data[0];
-		nResampledDataSize = nDataSize;
+		printf("swr_alloc error \n");
+		return -1;
 	}
 
+	src_ch_layout = (m_pCodecCtx->channel_layout &&
+		m_pCodecCtx->channels ==
+		av_get_channel_layout_nb_channels(m_pCodecCtx->channel_layout)) ?
+		m_pCodecCtx->channel_layout :
+		av_get_default_channel_layout(m_pCodecCtx->channels);
+
+	dst_ch_layout = AV_CH_LAYOUT_STEREO;
+	if (src_ch_layout <= 0)
+	{
+		printf("src_ch_layout error \n");
+		return -1;
+	}
+
+	src_nb_samples = frame->nb_samples;
+	if (src_nb_samples <= 0)
+	{
+		printf("src_nb_samples error \n");
+		return -1;
+	}
+
+	/* set options */
+	av_opt_set_int(m_pSwrCtx, "in_channel_layout", src_ch_layout, 0);
+	av_opt_set_int(m_pSwrCtx, "in_sample_rate", m_pCodecCtx->sample_rate, 0);
+	av_opt_set_sample_fmt(m_pSwrCtx, "in_sample_fmt", m_pCodecCtx->sample_fmt, 0);
+
+	av_opt_set_int(m_pSwrCtx, "out_channel_layout", dst_ch_layout, 0);
+	av_opt_set_int(m_pSwrCtx, "out_sample_rate", m_hwParams.freq, 0);
+	av_opt_set_sample_fmt(m_pSwrCtx, "out_sample_fmt", m_hwParams.fmt, 0);
+	swr_init(m_pSwrCtx);
+
+	max_dst_nb_samples = dst_nb_samples =
+		av_rescale_rnd(src_nb_samples, m_hwParams.freq, m_pCodecCtx->sample_rate, AV_ROUND_UP);
+	if (max_dst_nb_samples <= 0)
+	{
+		printf("av_rescale_rnd error \n");
+		return -1;
+	}
+
+	dst_nb_channels = av_get_channel_layout_nb_channels(dst_ch_layout);
+	ret = av_samples_alloc_array_and_samples(&dst_data, &dst_linesize, dst_nb_channels,
+		dst_nb_samples, m_hwParams.fmt, 0);
+	if (ret < 0)
+	{
+		printf("av_samples_alloc_array_and_samples error \n");
+		return -1;
+	}
+
+
+	dst_nb_samples = av_rescale_rnd(swr_get_delay(m_pSwrCtx, m_pCodecCtx->sample_rate) +
+		src_nb_samples, m_hwParams.freq, m_pCodecCtx->sample_rate, AV_ROUND_UP);
+	if (dst_nb_samples <= 0)
+	{
+		printf("av_rescale_rnd error \n");
+		return -1;
+	}
+	if (dst_nb_samples > max_dst_nb_samples)
+	{
+		av_free(dst_data[0]);
+		ret = av_samples_alloc(dst_data, &dst_linesize, dst_nb_channels,
+			dst_nb_samples, m_hwParams.fmt, 1);
+		max_dst_nb_samples = dst_nb_samples;
+	}
+
+	data_size = av_samples_get_buffer_size(NULL, m_pCodecCtx->channels,
+		frame->nb_samples,
+		m_pCodecCtx->sample_fmt, 1);
+	if (data_size <= 0)
+	{
+		printf("av_samples_get_buffer_size error \n");
+		return -1;
+	}
+	resampled_data_size = data_size;
+
+	ZeroMemory(m_bufferTemp, sizeof(m_bufferTemp));
+	uint8_t *out[] = { m_bufferTemp };
+	int out_count = sizeof(m_bufferTemp) / 2 / av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+	int len = swr_convert(m_pSwrCtx, (uint8_t **)&out, resampled_data_size,
+		(const uint8_t**)frame->data, frame->nb_samples);
+
+	if (len < 0) 
+	{
+		av_log(NULL, AV_LOG_ERROR, "swr_convert() failed\n");
+		return -1;
+	}
+
+	m_buffer = m_bufferTemp;
+	nResampledDataSize = len * m_hwParams.channels * av_get_bytes_per_sample(m_hwParams.fmt);
+	
 	AVRational tb{ 1, frame->sample_rate };
 	double pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
 	if (!isnan(pts))
@@ -461,4 +490,44 @@ int CAudioPlayer::DecodeFrame()
 	else
 		m_clock = NAN;
 	return nResampledDataSize;
+}
+
+int CAudioPlayer::DecodeFrame(AVFrame * pFrame)
+{
+	int ret = AVERROR(EAGAIN);
+	for (;;)
+	{
+		do
+		{
+			ret = avcodec_receive_frame(m_pCodecCtx, pFrame);
+			if (ret >= 0)
+			{
+				AVRational tb{ 1, pFrame->sample_rate };
+				if (pFrame->pts != AV_NOPTS_VALUE)
+					pFrame->pts = av_rescale_q(pFrame->pts, m_pCodecCtx->pkt_timebase, tb);
+			}
+
+			if (ret == AVERROR_EOF)
+			{
+				avcodec_flush_buffers(m_pCodecCtx);
+				return -1;
+			}
+
+			if (ret >= 0)
+				return 1;
+		} while (ret != AVERROR(EAGAIN));
+
+		PacketPtr packet{ nullptr, [](AVPacket* p) { av_packet_free(&p); } };
+		if (m_queuePacket.Pop(packet))
+		{
+			//av_log(NULL, AV_LOG_INFO, "queue Count: %d", m_queuePacket.Count());
+			if (avcodec_send_packet(m_pCodecCtx, packet.get()) == AVERROR(EAGAIN))
+			{
+				char szErr[512] = { 0 };
+				av_strerror(ret, szErr, sizeof(szErr));
+				av_log(NULL, AV_LOG_ERROR, "video codec send packet error. err:%d, %s", ret, szErr);
+			}
+		}
+	}
+	return 0;
 }

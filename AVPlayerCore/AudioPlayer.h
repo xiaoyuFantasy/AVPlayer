@@ -37,7 +37,8 @@ protected:
 	bool OpenAudioDevice();
 	void DecodeThread();
 	static void audio_callback(void* userData, Uint8* stream, int len);
-	int DecodeFrame();
+	int GetFrame();
+	int DecodeFrame(AVFrame* pFrame);
 
 private:
 	PLAYER_OPTS			m_opts;
@@ -55,9 +56,10 @@ private:
 	uint8_t				m_bufferTemp[AVCODEC_MAX_AUDIO_FRAME_SIZE * 4] = { 0 };
 	uint8_t				m_bufferSilence[1024] = { 0 };
 	uint8_t*			m_buffer = nullptr;
-	std::atomic_uint	m_nBufferIndex = 0;
-	std::atomic_uint	m_nBufferSize = 0;
+	std::atomic_int		m_nBufferIndex = 0;
+	std::atomic_int		m_nBufferSize = 0;
 	AudioParams			m_hwParams; //Éù¿¨²ÎÊý
+	AudioParams			m_hwSrc;
 	SDL_AudioDeviceID	m_audioDevID;
 	SwrContext*			m_pSwrCtx = nullptr;
 	double				m_clock = 0.0;

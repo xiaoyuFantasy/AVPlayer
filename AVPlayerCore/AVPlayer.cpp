@@ -16,16 +16,16 @@ void CAVPlayer::Play(PLAYER_OPTS opts)
 	av_log(NULL, AV_LOG_INFO, "AVPlayer");
 	av_log(NULL, AV_LOG_INFO, "Path: %s", opts.strPath.c_str());
 	
-	std::thread([&](PLAYER_OPTS opts) {
+	std::thread([](PLAYER_OPTS opts, CAVPlayerCore **lpPlayerCore) {
 		CAVPlayerCore* pCore = new CAVPlayerCore(opts);
-		m_pPlayerCore = pCore;
+		*lpPlayerCore = pCore;
 		if (pCore)
 		{
 			pCore->Play();
 			delete pCore;
 			pCore = nullptr;
 		}
-	}, opts).detach();
+	}, opts, &m_pPlayerCore).detach();
 }
 
 void CAVPlayer::Stop()

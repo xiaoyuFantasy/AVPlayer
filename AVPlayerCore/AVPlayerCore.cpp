@@ -31,6 +31,8 @@ bool CAVPlayerCore::Play()
 
 	m_pFormatCtx = avformat_alloc_context();
 	AVIOInterruptCB cb = { interrupt_callback , this };
+	m_pFormatCtx->interrupt_callback = cb;
+	m_pFormatCtx->flush_packets = 1;
 	int nIndex = 0;
 	int nMaxCount = 10;
 	int ret = 0;
@@ -147,8 +149,11 @@ bool CAVPlayerCore::Play()
 				av_log(NULL, AV_LOG_ERROR, "avformat_seek_file Failed !!! ts:%lld", target);
 			else
 			{
-				m_pAudioPlayer->ClearFrame();
-				m_pVideoPlayer->ClearFrame();
+				if (m_bAudioOpen)
+					m_pAudioPlayer->ClearFrame();
+
+				if (m_bVideoOpen)
+					m_pVideoPlayer->ClearFrame();
 			}
 			av_log(NULL, AV_LOG_INFO, "avformat_seek_file");
 			m_bSeek = false;

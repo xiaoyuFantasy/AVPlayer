@@ -211,7 +211,7 @@ void CVideoPlayer::SetWindowSize(int nWidth, int nHeight)
 		m_nWndWidth = nWidth;
 		m_nWndHeight = nWidth / m_dVideoProportion;
 	}
-	//if (NORMAL_TYPE == m_type)
+	if (NORMAL_TYPE == m_opts.video_type)
 	{
 		SDL_Rect sdl_rect;
 		sdl_rect.x = 0;
@@ -229,7 +229,7 @@ void CVideoPlayer::SetWindowSize(int nWidth, int nHeight)
 		//SDL_RenderSetViewport(m_pRenderer, &sdl_rect);
 		m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, m_pCodecCtx->width, m_pCodecCtx->height);
 	}
-	//else
+	else
 	{
 		int left = (nWidth - m_nWndWidth) / 2;
 		int top = (nHeight - m_nWndHeight) / 2;
@@ -458,10 +458,10 @@ void CVideoPlayer::RenderThread()
 				continue;
 			}
 
-			if (m_queueFrame.Count() != 0)  //if (m_queueFrame.Pop(pFrame))
+			FramePtr pFrame{ nullptr, [](AVFrame* p) { av_frame_free(&p); } };
+			if (m_queueFrame.Pop(pFrame))
 			{
-				FramePtr pFrame{ nullptr, [](AVFrame* p) { av_frame_free(&p); } };
-				m_queueFrame.Pop(pFrame);
+				//m_queueFrame.Pop(pFrame);
 				double video_pts = 0; //当前视频的pts
 				if (pFrame->pts == AV_NOPTS_VALUE && pFrame->opaque && *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE)
 					video_pts = *(int64_t *)pFrame->opaque;
@@ -509,11 +509,8 @@ void CVideoPlayer::RenderThread()
 			}
 
 			m_mutexTexture.lock();
-
 			if(m_opts.video_type == PANORAMIC_TYPE)
-			{
 				NativeSetFrameData(m_hPanoramicWnd, STREAM_FORMAT::FRAME_FORMAT_YUV, m_pFrameOut->data);
-			}
 			else
 			{
 				SDL_Rect sdl_rect;
