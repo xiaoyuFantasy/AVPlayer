@@ -10,7 +10,7 @@ public:
 	virtual ~ISound() = default;
 
 	virtual bool InitAudio() = 0;
-	virtual bool OpenAudio(void* userdata) = 0;
+	virtual bool OpenAudio(int sample_rate, int channel, int channel_layout) = 0;
 	virtual bool CloseAudio() = 0;
 	virtual void SetCallback(funcCallback callback) = 0;
 	virtual void Start() = 0;
