@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Decoder">
+      <UniqueIdentifier>{f2208d8b-becf-4c29-99a2-e9fd849b1a30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render">
+      <UniqueIdentifier>{018ab40f-3255-4ed8-aa73-269e64973535}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sound">
+      <UniqueIdentifier>{ecb22e7f-2dc9-4816-9ed5-417f64c047fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -60,17 +69,26 @@
     <ClInclude Include="AVPlayer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DecoderFactory.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="PlayerDefine.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="FFmpegDecoder.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="SingleModule.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DecoderFactory.h">
+      <Filter>Decoder</Filter>
+    </ClInclude>
+    <ClInclude Include="FFmpegDecoder.h">
+      <Filter>Decoder</Filter>
+    </ClInclude>
+    <ClInclude Include="DecoderDefine.h">
+      <Filter>Decoder</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundDefine.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="SDLSound.h">
+      <Filter>Sound</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -95,11 +113,14 @@
     <ClCompile Include="AVPlayer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="DecoderFactory.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="FFmpegDecoder.cpp">
-      <Filter>源文件</Filter>
+      <Filter>Decoder</Filter>
+    </ClCompile>
+    <ClCompile Include="DecoderFactory.cpp">
+      <Filter>Decoder</Filter>
+    </ClCompile>
+    <ClCompile Include="SDLSound.cpp">
+      <Filter>Sound</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
