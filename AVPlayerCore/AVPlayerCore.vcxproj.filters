@@ -60,6 +60,18 @@
     <ClInclude Include="AVPlayer.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DecoderFactory.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerDefine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FFmpegDecoder.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SingleModule.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -81,6 +93,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="AVPlayer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DecoderFactory.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="FFmpegDecoder.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

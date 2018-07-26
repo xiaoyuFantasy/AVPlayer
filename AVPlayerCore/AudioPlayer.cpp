@@ -5,7 +5,7 @@
 CAudioPlayer::CAudioPlayer(AVStream* pStream)
 	:m_pStream(pStream)
 	,m_queueFrame(MAX_AUDIO_SIZE)
-	,m_queuePacket(20)
+	,m_queuePacket(MAX_AUDIO_SIZE)
 {
 }
 
@@ -44,7 +44,6 @@ void CAudioPlayer::Play()
 
 	m_bPlaying = true;
 	SDL_PauseAudioDevice(m_audioDevID, 0);
-	DecodeThread();
 }
 
 bool CAudioPlayer::IsPlaying()
@@ -69,8 +68,6 @@ void CAudioPlayer::Stop()
 
 	m_bQuit = true;
 	SDL_CloseAudioDevice(m_audioDevID);
-	if (m_threadDecode.joinable())
-		m_threadDecode.join();
 
 	m_bPlaying = false;
 	m_bOpen = false;
@@ -116,8 +113,6 @@ void CAudioPlayer::ClearFrame()
 	m_bStopDecode = true;
 	m_queuePacket.Quit();
 	m_queueFrame.Quit();
-	if (m_threadDecode.joinable())
-		m_threadDecode.join();
 	avcodec_flush_buffers(m_pCodecCtx);
 	m_queuePacket.Init();
 	m_queueFrame.Init();
@@ -126,7 +121,6 @@ void CAudioPlayer::ClearFrame()
 	m_clock = 0.0;
 	m_pts = 0.0;
 	m_bStopDecode = false;
-	DecodeThread();
 }
 
 bool CAudioPlayer::CreateDecoder()
@@ -261,47 +255,6 @@ bool CAudioPlayer::OpenAudioDevice()
 	return true;
 }
 
-void CAudioPlayer::DecodeThread()
-{
-	/*m_threadDecode = std::thread([&]() {
-		av_log(NULL, AV_LOG_INFO, "Audio Decode Thread");
-		while (!m_bStopDecode && !m_bQuit)
-		{
-			if (m_bPaused)
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				continue;
-			}
-
-			PacketPtr packet{ nullptr, [](AVPacket* p) { av_packet_free(&p); } };
-			if (!m_queuePacket.Pop(packet))
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(40));
-				continue;
-			}
-
-			int ret = avcodec_send_packet(m_pCodecCtx, packet.get());
-			if (ret != 0 && ret != AVERROR(EAGAIN) || ret == AVERROR_EOF)
-			{
-				char szErr[512] = { 0 };
-				av_strerror(ret, szErr, sizeof(szErr));
-				av_log(NULL, AV_LOG_ERROR, "video codec send packet error. err:%d, %s", ret, szErr);
-				continue;
-			}
-
-			while ((ret == 0 || ret == AVERROR(EAGAIN)) && !m_bStopDecode && !m_bQuit)
-			{
-				FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
-				ret = avcodec_receive_frame(m_pCodecCtx, pFrame.get());
-				if (ret == 0)
-					m_queueFrame.Push(std::move(pFrame));
-				else
-					break;
-			}
-		}
-	});*/
-}
-
 void CAudioPlayer::audio_callback(void * userData, Uint8 * stream, int len)
 {
 	CAudioPlayer* p = (CAudioPlayer*)userData;
@@ -371,107 +324,31 @@ int CAudioPlayer::GetFrame()
 	
 	if (DecodeFrame(frame.get()) < 0)
 		return -1;
+	
+	if (frame->channels > 0 && frame->channel_layout == 0)
+		frame->channel_layout = av_get_default_channel_layout(frame->channels);
+	else if (frame->channels == 0 && frame->channel_layout > 0)
+		frame->channels = av_get_channel_layout_nb_channels(frame->channel_layout);
 
-	int data_size = 0;
-	int ret = 0;
-	int64_t src_ch_layout = AV_CH_LAYOUT_STEREO; //初始化这样根据不同文件做调整
-	int64_t dst_ch_layout = AV_CH_LAYOUT_STEREO; //这里设定ok
-	int dst_nb_channels = 0;
-	int dst_linesize = 0;
-	int src_nb_samples = 0;
-	int dst_nb_samples = 0;
-	int max_dst_nb_samples = 0;
-	uint8_t **dst_data = NULL;
-	int resampled_data_size = 0;
-
-	//重新采样
 	if (m_pSwrCtx)
 		swr_free(&m_pSwrCtx);
 
-	m_pSwrCtx = swr_alloc();
-	if (!m_pSwrCtx)
+	m_pSwrCtx = swr_alloc_set_opts(nullptr, m_hwParams.channel_layout, AV_SAMPLE_FMT_S16, m_hwParams.freq,
+		frame->channel_layout, (AVSampleFormat)frame->format, frame->sample_rate, 0, nullptr);
+
+	if (!m_pSwrCtx || swr_init(m_pSwrCtx) < 0)
 	{
-		printf("swr_alloc error \n");
+		av_log(NULL, AV_LOG_ERROR, "swr alloc or init error!!!");
 		return -1;
 	}
 
-	src_ch_layout = (m_pCodecCtx->channel_layout &&
-		m_pCodecCtx->channels ==
-		av_get_channel_layout_nb_channels(m_pCodecCtx->channel_layout)) ?
-		m_pCodecCtx->channel_layout :
-		av_get_default_channel_layout(m_pCodecCtx->channels);
-
-	dst_ch_layout = AV_CH_LAYOUT_STEREO;
-	if (src_ch_layout <= 0)
-	{
-		printf("src_ch_layout error \n");
-		return -1;
-	}
-
-	src_nb_samples = frame->nb_samples;
-	if (src_nb_samples <= 0)
-	{
-		printf("src_nb_samples error \n");
-		return -1;
-	}
-
-	/* set options */
-	av_opt_set_int(m_pSwrCtx, "in_channel_layout", src_ch_layout, 0);
-	av_opt_set_int(m_pSwrCtx, "in_sample_rate", m_pCodecCtx->sample_rate, 0);
-	av_opt_set_sample_fmt(m_pSwrCtx, "in_sample_fmt", m_pCodecCtx->sample_fmt, 0);
-
-	av_opt_set_int(m_pSwrCtx, "out_channel_layout", dst_ch_layout, 0);
-	av_opt_set_int(m_pSwrCtx, "out_sample_rate", m_hwParams.freq, 0);
-	av_opt_set_sample_fmt(m_pSwrCtx, "out_sample_fmt", m_hwParams.fmt, 0);
-	swr_init(m_pSwrCtx);
-
-	max_dst_nb_samples = dst_nb_samples =
-		av_rescale_rnd(src_nb_samples, m_hwParams.freq, m_pCodecCtx->sample_rate, AV_ROUND_UP);
-	if (max_dst_nb_samples <= 0)
-	{
-		printf("av_rescale_rnd error \n");
-		return -1;
-	}
-
-	dst_nb_channels = av_get_channel_layout_nb_channels(dst_ch_layout);
-	ret = av_samples_alloc_array_and_samples(&dst_data, &dst_linesize, dst_nb_channels,
-		dst_nb_samples, m_hwParams.fmt, 0);
-	if (ret < 0)
-	{
-		printf("av_samples_alloc_array_and_samples error \n");
-		return -1;
-	}
-
-
-	dst_nb_samples = av_rescale_rnd(swr_get_delay(m_pSwrCtx, m_pCodecCtx->sample_rate) +
-		src_nb_samples, m_hwParams.freq, m_pCodecCtx->sample_rate, AV_ROUND_UP);
-	if (dst_nb_samples <= 0)
-	{
-		printf("av_rescale_rnd error \n");
-		return -1;
-	}
-	if (dst_nb_samples > max_dst_nb_samples)
-	{
-		av_free(dst_data[0]);
-		ret = av_samples_alloc(dst_data, &dst_linesize, dst_nb_channels,
-			dst_nb_samples, m_hwParams.fmt, 1);
-		max_dst_nb_samples = dst_nb_samples;
-	}
-
-	data_size = av_samples_get_buffer_size(NULL, m_pCodecCtx->channels,
-		frame->nb_samples,
-		m_pCodecCtx->sample_fmt, 1);
-	if (data_size <= 0)
-	{
-		printf("av_samples_get_buffer_size error \n");
-		return -1;
-	}
-	resampled_data_size = data_size;
+	int dst_nb_samples = av_rescale_rnd(swr_get_delay(m_pSwrCtx, frame->sample_rate) + frame->nb_samples,
+		m_hwParams.freq, m_hwParams.fmt, AVRounding(1));
 
 	ZeroMemory(m_bufferTemp, sizeof(m_bufferTemp));
 	uint8_t *out[] = { m_bufferTemp };
 	int out_count = sizeof(m_bufferTemp) / 2 / av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
-	int len = swr_convert(m_pSwrCtx, (uint8_t **)&out, resampled_data_size,
+	int len = swr_convert(m_pSwrCtx, (uint8_t **)&out, dst_nb_samples,
 		(const uint8_t**)frame->data, frame->nb_samples);
 
 	if (len < 0) 
@@ -520,7 +397,6 @@ int CAudioPlayer::DecodeFrame(AVFrame * pFrame)
 		PacketPtr packet{ nullptr, [](AVPacket* p) { av_packet_free(&p); } };
 		if (m_queuePacket.Pop(packet))
 		{
-			//av_log(NULL, AV_LOG_INFO, "queue Count: %d", m_queuePacket.Count());
 			if (avcodec_send_packet(m_pCodecCtx, packet.get()) == AVERROR(EAGAIN))
 			{
 				char szErr[512] = { 0 };

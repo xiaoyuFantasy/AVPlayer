@@ -35,7 +35,6 @@ public:
 protected:
 	bool CreateDecoder();
 	bool OpenAudioDevice();
-	void DecodeThread();
 	static void audio_callback(void* userData, Uint8* stream, int len);
 	int GetFrame();
 	int DecodeFrame(AVFrame* pFrame);
@@ -65,7 +64,6 @@ private:
 	double				m_clock = 0.0;
 	double				m_pts = 0.0;
 	int					m_hwSize = 0;
-	std::thread			m_threadDecode;
 	std::atomic_bool	m_bStopDecode = false;
 };
 

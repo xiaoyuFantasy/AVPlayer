@@ -153,13 +153,17 @@
     <ClInclude Include="AudioDefine.h" />
     <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="AVPlayer.h" />
+    <ClInclude Include="FFmpegDecoder.h" />
+    <ClInclude Include="DecoderFactory.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="AVPlayerCore.h" />
     <ClInclude Include="AVPlayerDefine.h" />
     <ClInclude Include="AVPlayerDll.h" />
     <ClInclude Include="Clock.h" />
     <ClInclude Include="Lock.h" />
+    <ClInclude Include="PlayerDefine.h" />
     <ClInclude Include="Queue.h" />
+    <ClInclude Include="SingleModule.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="VideoDefine.h" />
@@ -170,6 +174,8 @@
     <ClCompile Include="AVPlayer.cpp" />
     <ClCompile Include="AVPlayerCore.cpp" />
     <ClCompile Include="AVPlayerDll.cpp" />
+    <ClCompile Include="FFmpegDecoder.cpp" />
+    <ClCompile Include="DecoderFactory.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

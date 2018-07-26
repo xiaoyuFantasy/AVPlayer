@@ -77,16 +77,12 @@ bool CQueue<T>::Push(T && data)
 	std::unique_lock<std::mutex> lock(m_mutex);
 	if (!m_quit)
 	{
-		if (m_queue.size () < m_size)
-		{
-			m_queue.push(std::move(data));
-			m_cvEmpty.notify_all();
-			return true;
-		}
-		else
-		{
+		if (m_queue.size () >= m_size)
 			m_cvFull.wait(lock);
-		}
+
+		m_queue.push(std::move(data));
+		m_cvEmpty.notify_all();
+		return true;
 	}
 
 	return false;
@@ -98,17 +94,13 @@ bool CQueue<T>::Pop(T & data)
 	std::unique_lock<std::mutex> lock(m_mutex);
 	if (!m_quit)
 	{
-		if (!m_queue.empty())
-		{
-			data = std::move(m_queue.front());
-			m_queue.pop();
-			m_cvFull.notify_all();
-			return true;
-		}
-		else
-		{
+		if (m_queue.empty())
 			m_cvEmpty.wait(lock);
-		}
+		
+		data = std::move(m_queue.front());
+		m_queue.pop();
+		m_cvFull.notify_all();
+		return true;
 	}
 	return false;
 }

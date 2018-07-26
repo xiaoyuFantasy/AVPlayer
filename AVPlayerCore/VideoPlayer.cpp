@@ -412,8 +412,8 @@ void CVideoPlayer::DecodeThread()
 
 			while ((ret == 0 || ret == AVERROR(EAGAIN)) && !m_bStopDecode && !m_bQuit)
 			{
-				std::unique_ptr<AVFrame, std::function<void(AVFrame*)>> pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
-				std::unique_ptr<AVFrame, std::function<void(AVFrame*)>> pSWFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
+				FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
+				FramePtr pSWFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
 				ret = avcodec_receive_frame(m_pCodecCtx, pFrame.get());
 				if (ret != 0)
 					break;
