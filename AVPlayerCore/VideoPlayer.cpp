@@ -52,7 +52,7 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	static int dummy;
 	VirtualQuery(&dummy, &mbi, sizeof(mbi));
 	std::string strWndName = CreateGuidToString("PlayerPanoWnd_");
-	RECT rc;
+	/*RECT rc;
 	GetWindowRect(m_opts.hWnd, &rc);
 	m_nWndWidth = rc.right - rc.left;
 	m_nWndHeight = rc.bottom - rc.top;
@@ -71,7 +71,7 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	{
 		NativeSetPlayMode(m_hPanoramicWnd, PLAY_MODE::STANDARD);
 		av_log(NULL, AV_LOG_INFO, "Create PANORAMIC Window");
-	}
+	}*/
 
 	m_queueFrame.Init();
 	m_queuePacket.Init();
@@ -135,7 +135,7 @@ void CVideoPlayer::Stop()
 	if (m_pHWDeviceCtx)
 		av_buffer_unref(&m_pHWDeviceCtx);
 	
-	NativeOnDestroy(m_hPanoramicWnd);
+	//NativeOnDestroy(m_hPanoramicWnd);
 
 	if (m_pWindow)
 		SDL_DestroyWindow(m_pWindow);
@@ -176,26 +176,26 @@ void CVideoPlayer::ClearFrame()
 
 void CVideoPlayer::SetPanormaicType(PLAY_MODE type)
 {
-	if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
-		NativeSetPlayMode(m_hPanoramicWnd, type);
+	/*if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
+		NativeSetPlayMode(m_hPanoramicWnd, type);*/
 }
 
 void CVideoPlayer::SetPanoramicScale(float factor)
 {
-	if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
-		NativeSetScale(m_hPanoramicWnd, factor);
+	/*if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
+		NativeSetScale(m_hPanoramicWnd, factor);*/
 }
 
 void CVideoPlayer::SetPanoramicRotate(float x, float y)
 {
-	if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
-		NativeSetRotate(m_hPanoramicWnd, x, y);
+	/*if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
+		NativeSetRotate(m_hPanoramicWnd, x, y);*/
 }
 
 void CVideoPlayer::SetPanoramicScroll(float latitude, float longitude)
 {
-	if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
-		NativeSetScroll(m_hPanoramicWnd, latitude, longitude);
+	/*if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
+		NativeSetScroll(m_hPanoramicWnd, latitude, longitude);*/
 }
 
 void CVideoPlayer::SetWindowSize(int nWidth, int nHeight)
@@ -231,13 +231,13 @@ void CVideoPlayer::SetWindowSize(int nWidth, int nHeight)
 	}
 	else
 	{
-		int left = (nWidth - m_nWndWidth) / 2;
+		/*int left = (nWidth - m_nWndWidth) / 2;
 		int top = (nHeight - m_nWndHeight) / 2;
 		av_log(nullptr, AV_LOG_INFO, "width :%d, height:%d", nWidth, nHeight);
 		av_log(nullptr, AV_LOG_INFO, "Proportion: %f", m_dVideoProportion);
 		av_log(nullptr, AV_LOG_INFO, "left :%d, top:%d", left, top);
 		if (m_hPanoramicWnd)
-			NativeUpdateViewport(m_hPanoramicWnd, 0, 0, nWidth, nHeight);
+			NativeUpdateViewport(m_hPanoramicWnd, 0, 0, nWidth, nHeight);*/
 	}
 	m_mutexTexture.unlock();
 }
@@ -509,9 +509,9 @@ void CVideoPlayer::RenderThread()
 			}
 
 			m_mutexTexture.lock();
-			if(m_opts.video_type == PANORAMIC_TYPE)
+			/*if(m_opts.video_type == PANORAMIC_TYPE)
 				NativeSetFrameData(m_hPanoramicWnd, STREAM_FORMAT::FRAME_FORMAT_YUV, m_pFrameOut->data);
-			else
+			else*/
 			{
 				SDL_Rect sdl_rect;
 				sdl_rect.x = 0;

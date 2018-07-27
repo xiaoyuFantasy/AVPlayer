@@ -90,6 +90,15 @@
     <ClInclude Include="SDLSound.h">
       <Filter>Sound</Filter>
     </ClInclude>
+    <ClInclude Include="SoundFactory.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderDefine.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="GlRender.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -121,6 +130,12 @@
     </ClCompile>
     <ClCompile Include="SDLSound.cpp">
       <Filter>Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="SoundFactory.cpp">
+      <Filter>Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="GlRender.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
