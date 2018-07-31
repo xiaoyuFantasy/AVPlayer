@@ -26,13 +26,13 @@ std::string CreateGuidToString(char *str)
 	return strTemp;
 }
 
-CVideoPlayer::CVideoPlayer(AVStream* pStream)
-	:m_queueFrame(50)
-	,m_queuePacket(MAX_VIDEO_SIZE)
-	,m_pStream(pStream)
+CVideoPlayer::CVideoPlayer(AVStream* pStream, IRender* render)
+	: m_queueFrame(50)
+	, m_pStream(pStream)
+	, m_pRender(render)
+	, m_queuePacket(MAX_VIDEO_SIZE)
 {
 }
-
 
 CVideoPlayer::~CVideoPlayer()
 {
@@ -82,10 +82,10 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	return true;
 }
 
-void CVideoPlayer::SetAudioClock(IClock * pClock)
-{
-	m_pAudioClock = pClock;
-}
+//void CVideoPlayer::SetAudioClock(IClock * pClock)
+//{
+//	m_pAudioClock = pClock;
+//}
 
 void CVideoPlayer::Play()
 {

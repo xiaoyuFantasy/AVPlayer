@@ -17,7 +17,6 @@ public:
 
 public:
 	const char * GetPath();
-	
 	bool Play();
 	bool IsPlaying() const;
 	void Pause(bool bPause = true);

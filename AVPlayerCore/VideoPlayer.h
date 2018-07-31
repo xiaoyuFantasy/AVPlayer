@@ -1,24 +1,20 @@
 #pragma once
-#include <atomic>
-#include <string>
-#include <mutex>
-#include <thread>
 #include "VideoDefine.h"
+#include "RenderDefine.h"
 #include "AVPlayerDefine.h"
 #include "Player.h"
-#include "Clock.h"
 
 #define MAX_VIDEO_SIZE (1024) //25 * 256 * 1024
 
-class CVideoPlayer : public IPlayer, public IClock
+class CVideoPlayer : public IPlayer
 {
 public:
-	CVideoPlayer(AVStream* pStream);
+	CVideoPlayer(AVStream* pStream, IRender* render);
 	virtual ~CVideoPlayer();
 
 public:
 	bool Open(PLAYER_OPTS &opts);
-	void SetAudioClock(IClock* pClock);
+	//void SetAudioClock(IClock* pClock);
 	void Play();
 	bool IsPlaying();
 	void Pause(bool IsPause = true);
@@ -74,8 +70,8 @@ private:
 
 	std::thread			m_threadDecode;
 	std::thread			m_threadRender;
-	IClock*				m_pAudioClock = nullptr;
 
+	IRender*			m_pRender = nullptr;
 	//×ª»»
 	SwsContext*			m_pSwsCtx = nullptr;
 	uint8_t*			m_pVideoBuffer = nullptr;

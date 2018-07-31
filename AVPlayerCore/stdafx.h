@@ -29,6 +29,12 @@ extern "C" {
 #include "Lock.h"
 #include "Queue.h"
 
+#include <atomic>
+#include <string>
+#include <mutex>
+#include <thread>
+#include <functional>
+
 using PacketPtr = std::unique_ptr<AVPacket, std::function<void(AVPacket*)>>;
 using FramePtr = std::unique_ptr<AVFrame, std::function<void(AVFrame*)>>;
 using PacketQueue = CQueue<PacketPtr>;

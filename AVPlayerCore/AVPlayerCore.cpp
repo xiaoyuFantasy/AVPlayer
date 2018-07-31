@@ -68,6 +68,8 @@ bool CAVPlayerCore::Play()
 	if (m_nAudioIndex != -1 && m_opts.bEnableAudio)
 	{
 		m_pSound = CSingleModule<CSoundFactory>::getSingleModule().CreateSound();
+		m_pSound->InitAudio();
+
 		m_pAudioPlayer = new CAudioPlayer(m_pFormatCtx->streams[m_nAudioIndex], m_pSound);
 		if (m_pAudioPlayer->Open(m_opts))
 			m_bAudioOpen = true;
@@ -80,9 +82,11 @@ bool CAVPlayerCore::Play()
 
 	if (m_nVideoIndex != -1 && m_opts.bEnableVideo)
 	{
-		/*m_pRender = CSingleModule<CRenderFactory>::getSingleModule().CreateRender();
+		m_pRender = CSingleModule<CRenderFactory>::getSingleModule().CreateRender();
+		m_pRender->InitRender();
+
 		m_pVideoPlayer = new CVideoPlayer(m_pFormatCtx->streams[m_nVideoIndex]);
-		if (m_pVideoPlayer->Open(m_opts))
+		/*if (m_pVideoPlayer->Open(m_opts))
 		{
 			if (m_bAudioOpen)
 				m_pVideoPlayer->SetAudioClock(m_pAudioPlayer);
@@ -92,7 +96,7 @@ bool CAVPlayerCore::Play()
 		{
 			delete m_pVideoPlayer;
 			m_pVideoPlayer = nullptr;
-		}*/	
+		}*/
 	}
 
 	if (!m_bAudioOpen && !m_bVideoOpen)
@@ -126,7 +130,7 @@ bool CAVPlayerCore::Play()
 	}
 
 	if (m_bAudioOpen)
-		m_pAudioPlayer->Play();
+		m_pSound->Start();
 
 	if (m_bVideoOpen)
 		m_pVideoPlayer->Play();
@@ -186,8 +190,13 @@ bool CAVPlayerCore::Play()
 
 	m_bQuit = true;
 
-	if (m_bAudioOpen && m_pAudioPlayer)
-		m_pAudioPlayer->Stop();
+	if (m_bAudioOpen)
+	{
+		if (m_pSound)
+			m_pSound->CloseAudio();
+		if (m_pAudioPlayer)
+			m_pAudioPlayer->Close();
+	}
 
 	if (m_bVideoOpen && m_pVideoPlayer)
 		m_pVideoPlayer->Stop();

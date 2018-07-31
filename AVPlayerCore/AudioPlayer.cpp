@@ -6,10 +6,9 @@
 CAudioPlayer::CAudioPlayer(AVStream* pStream, ISound *pSound)
 	:m_pStream(pStream)
 	,m_pSound(pSound)
-	,m_queueFrame(MAX_AUDIO_SIZE)
 	,m_queuePacket(MAX_AUDIO_SIZE)
 {
-	m_pSound->InitAudio();
+	
 }
 
 CAudioPlayer::~CAudioPlayer()
@@ -30,12 +29,21 @@ bool CAudioPlayer::Open(PLAYER_OPTS &opts)
 	m_pSound->SetCallback(std::bind(&CAudioPlayer::funcDecodeFrame, this, std::placeholders::_1));
 	av_log(NULL, AV_LOG_INFO, "Audio Player Open Audio Device Success");
 
-	m_queueFrame.Init();
 	m_queuePacket.Init();
 
 	m_bOpen = true;
 	m_opts = opts;
 	return true;
+}
+
+void CAudioPlayer::Close()
+{
+	m_queuePacket.Quit();
+	if (m_pCodecCtx)
+		avcodec_free_context(&m_pCodecCtx);
+
+	if (m_pSwrCtx)
+		swr_free(&m_pSwrCtx);
 }
 
 double CAudioPlayer::GetClock()
@@ -51,10 +59,8 @@ void CAudioPlayer::PushPacket(PacketPtr && packet_ptr)
 void CAudioPlayer::ClearFrame()
 {
 	m_queuePacket.Quit();
-	m_queueFrame.Quit();
 	avcodec_flush_buffers(m_pCodecCtx);
 	m_queuePacket.Init();
-	m_queueFrame.Init();
 	m_clock = 0.0;
 	m_pts = 0.0;
 }

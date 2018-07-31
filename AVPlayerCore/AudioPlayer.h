@@ -19,6 +19,7 @@ public:
 
 public:
 	bool Open(PLAYER_OPTS &opts);
+	void Close();
 	double GetClock();
 	void PushPacket(PacketPtr && packet_ptr);
 	void ClearFrame();
@@ -33,7 +34,6 @@ private:
 	AVCodecContext*		m_pCodecCtx = nullptr;
 	std::atomic_bool	m_bOpen = false;
 	PacketQueue			m_queuePacket;
-	FrameQueue			m_queueFrame;
 	int64_t				m_nCallbackTime;
 	uint8_t				m_bufferTemp[AVCODEC_MAX_AUDIO_FRAME_SIZE * 4] = { 0 };
 	uint8_t				m_bufferSilence[1024] = { 0 };

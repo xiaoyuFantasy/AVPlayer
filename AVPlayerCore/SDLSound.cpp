@@ -88,7 +88,9 @@ bool CSDLSound::OpenAudio(int sample_rate, int channel, int channel_layout)
 
 bool CSDLSound::CloseAudio()
 {
-	return false;
+	SDL_CloseAudioDevice(m_audioDevID);
+	m_bPlaying = false;
+	return true;
 }
 
 void CSDLSound::SetCallback(funcDecodeFrame callback)
