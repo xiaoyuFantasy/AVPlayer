@@ -1,7 +1,13 @@
 #pragma once
 #include "AVPlayerDefine.h"
+#include "SoundDefine.h"
+#include "SoundFactory.h"
+#include "RenderDefine.h"
+#include "RenderFactory.h"
+
 #include "AudioPlayer.h"
 #include "VideoPlayer.h"
+
 
 class CAVPlayerCore
 {
@@ -11,6 +17,7 @@ public:
 
 public:
 	const char * GetPath();
+	
 	bool Play();
 	bool IsPlaying() const;
 	void Pause(bool bPause = true);
@@ -47,4 +54,6 @@ private:
 	bool				m_bVideoOpen = false;
 	CVideoPlayer*		m_pVideoPlayer = nullptr;
 	CAudioPlayer*		m_pAudioPlayer = nullptr;
+	IRender*			m_pRender = nullptr;
+	ISound*				m_pSound = nullptr;
 };

@@ -27,13 +27,12 @@ int CFFmpegDecoder::DecodeFrame(AVFrame * frame, PacketQueue & queue)
 			switch (m_pCodecCtx->codec_type)
 			{
 			case AVMEDIA_TYPE_AUDIO:
-				ret = avcodec_receive_frame(m_pCodecCtx, pTempFrame.get());
+				ret = avcodec_receive_frame(m_pCodecCtx, frame);
 				if (ret >= 0)
 				{
 					AVRational tb{ 1, frame->sample_rate };
-					if (pTempFrame->pts != AV_NOPTS_VALUE)
-						pTempFrame->pts = av_rescale_q(pTempFrame->pts, m_pCodecCtx->pkt_timebase, tb);
-					frame = std::move(pTempFrame.get());
+					if (frame->pts != AV_NOPTS_VALUE)
+						frame->pts = av_rescale_q(frame->pts, m_pCodecCtx->pkt_timebase, tb);
 				}
 				break;
 			case AVMEDIA_TYPE_VIDEO:

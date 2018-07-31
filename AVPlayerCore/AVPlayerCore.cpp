@@ -59,19 +59,16 @@ bool CAVPlayerCore::Play()
 	for (size_t i = 0; i < m_pFormatCtx->nb_streams; i++)
 	{
 		if (m_pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
-		{
 			m_nAudioIndex = i;
-		}
 
 		if (m_pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
-		{
 			m_nVideoIndex = i;
-		}
 	}
 
 	if (m_nAudioIndex != -1 && m_opts.bEnableAudio)
 	{
-		m_pAudioPlayer = new CAudioPlayer(m_pFormatCtx->streams[m_nAudioIndex]);
+		m_pSound = CSingleModule<CSoundFactory>::getSingleModule().CreateSound();
+		m_pAudioPlayer = new CAudioPlayer(m_pFormatCtx->streams[m_nAudioIndex], m_pSound);
 		if (m_pAudioPlayer->Open(m_opts))
 			m_bAudioOpen = true;
 		else
@@ -83,6 +80,7 @@ bool CAVPlayerCore::Play()
 
 	if (m_nVideoIndex != -1 && m_opts.bEnableVideo)
 	{
+		/*m_pRender = CSingleModule<CRenderFactory>::getSingleModule().CreateRender();
 		m_pVideoPlayer = new CVideoPlayer(m_pFormatCtx->streams[m_nVideoIndex]);
 		if (m_pVideoPlayer->Open(m_opts))
 		{
@@ -94,7 +92,7 @@ bool CAVPlayerCore::Play()
 		{
 			delete m_pVideoPlayer;
 			m_pVideoPlayer = nullptr;
-		}	
+		}*/	
 	}
 
 	if (!m_bAudioOpen && !m_bVideoOpen)
@@ -205,11 +203,11 @@ LOAD_ERROR:
 
 bool CAVPlayerCore::IsPlaying() const
 {
-	if (m_pVideoPlayer)
+	/*if (m_pVideoPlayer)
 		return m_pVideoPlayer->IsPlaying();
 
-	if (m_pAudioPlayer)
-		return m_pAudioPlayer->IsPlaying();
+	if (m_pSound)
+		return m_pSound->IsPlaying();*/
 
 	return false;
 }
@@ -219,8 +217,8 @@ void CAVPlayerCore::Pause(bool bPause)
 	m_bPaused = bPause;
 	if (m_pVideoPlayer)
 		m_pVideoPlayer->Pause(bPause);
-	if (m_pAudioPlayer)
-		m_pAudioPlayer->Pause(bPause);
+	if (m_pSound)
+		m_pSound->Pause(bPause);
 }
 
 bool CAVPlayerCore::IsPaused() const
@@ -244,27 +242,27 @@ void CAVPlayerCore::Seek(int nPos)
 
 void CAVPlayerCore::SetVolume(int nVolume)
 {
-	if (m_pAudioPlayer)
-		m_pAudioPlayer->SetVolume(nVolume);
+	if (m_pSound)
+		m_pSound->SetVolume(nVolume);
 }
 
 int CAVPlayerCore::GetVolume() const
 {
-	if (m_pAudioPlayer)
-		return m_pAudioPlayer->GetVolume();
+	if (m_pSound)
+		return m_pSound->GetVolume();
 	return 0;
 }
 
 void CAVPlayerCore::SetMuted(bool bMuted)
 {
-	if (m_pAudioPlayer)
-		m_pAudioPlayer->SetMuted(bMuted);
+	if (m_pSound)
+		m_pSound->SetVolume(0);
 }
 
 bool CAVPlayerCore::IsMuted() const
 {
-	if (m_pAudioPlayer)
-		return m_pAudioPlayer->IsMuted();
+	if (m_pSound)
+		return m_pSound->GetVolume() == 0;
 	return true;
 }
 

@@ -6,9 +6,6 @@
 #include <glfw3.h>
 #pragma comment(lib, "glfw3.lib")
 
-#include <gl\GL.h>
-#pragma comment(lib, "opengl32.lib")
-
 class CGlRender : public IRender
 {
 public:
@@ -21,7 +18,7 @@ public:
 	void DestoryRender() override;
 	bool SetRenderMode(RENDER_MODE) override;
 	void SetRenderSize(int width, int height) override;
-	void RenderFrameData(uint8_t* data[]) override;
+	void RenderFrameData(AVFrame *frame) override;
 	void SetScale(float factor) override;
 	void SetRotate(float x, float y) override;
 	void SetScroll(float latitude, float longitude) override;

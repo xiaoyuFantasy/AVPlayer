@@ -7,7 +7,6 @@
 #include "AVPlayerDefine.h"
 #include "Player.h"
 #include "Clock.h"
-//#include "CSharpInterface.h"
 
 #define MAX_VIDEO_SIZE (1024) //25 * 256 * 1024
 

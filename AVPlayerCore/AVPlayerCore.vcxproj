@@ -166,6 +166,8 @@
     <ClInclude Include="PlayerDefine.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="RenderDefine.h" />
+    <ClInclude Include="RenderFactory.h" />
+    <ClInclude Include="SDLRender.h" />
     <ClInclude Include="SDLSound.h" />
     <ClInclude Include="SingleModule.h" />
     <ClInclude Include="SoundDefine.h" />
@@ -197,6 +199,8 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="GlRender.cpp" />
+    <ClCompile Include="RenderFactory.cpp" />
+    <ClCompile Include="SDLRender.cpp" />
     <ClCompile Include="SDLSound.cpp" />
     <ClCompile Include="SoundFactory.cpp" />
     <ClCompile Include="stdafx.cpp">

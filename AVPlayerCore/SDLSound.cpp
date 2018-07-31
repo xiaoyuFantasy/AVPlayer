@@ -105,9 +105,9 @@ void CSDLSound::Start()
 	m_bPlaying = true;
 }
 
-void CSDLSound::Pause()
+void CSDLSound::Pause(bool bPause)
 {
-	SDL_PauseAudioDevice(m_audioDevID, 1);
+	SDL_PauseAudioDevice(m_audioDevID, bPause);
 }
 
 void CSDLSound::SetVolume(int volume)
@@ -118,6 +118,21 @@ void CSDLSound::SetVolume(int volume)
 int CSDLSound::GetVolume()
 {
 	return m_nVolume;
+}
+
+int CSDLSound::GetWantedSampleRate()
+{
+	return m_sampleRate;
+}
+
+int CSDLSound::GetWantedChannels()
+{
+	return m_channels;
+}
+
+int CSDLSound::GetWantedChannelLayout()
+{
+	return m_channelLayout;
 }
 
 void CSDLSound::audio_callback(void * userData, Uint8 * stream, int len)

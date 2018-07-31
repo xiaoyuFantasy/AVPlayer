@@ -16,7 +16,7 @@ public:
 	virtual void DestoryRender() = 0;
 	virtual bool SetRenderMode(RENDER_MODE) = 0;
 	virtual void SetRenderSize(int, int) = 0;
-	virtual void RenderFrameData(uint8_t* data[]) = 0;
+	virtual void RenderFrameData(AVFrame *frame) = 0;
 	virtual void SetScale(float factor) = 0;
 	virtual void SetRotate(float x, float y) = 0;
 	virtual void SetScroll(float latitude, float longitude) = 0;

@@ -65,9 +65,9 @@ void CGlRender::SetRenderSize(int width, int height)
 	
 }
 
-void CGlRender::RenderFrameData(uint8_t * data[])
+void CGlRender::RenderFrameData(AVFrame *frame)
 {
-	glFlush();
+	
 }
 
 void CGlRender::SetScale(float factor)

@@ -9,17 +9,22 @@ public:
 
 	static T& getSingleModule()
 	{
-		return m_single;
+		static T module;
+		return module;
 	}
 
 	static T* getSingleModulePtr()
 	{
-		return &m_single;
+		static T module;
+		return &module;
 	}
 
 private:
 	CSingleModule<T>& operator=(const CSingleModule<T>&) = delete;
 
 private:
-	static T& m_single;
+	//static T& m_single;
 };
+
+//template<class T>
+//T& CSingleModule<T>::m_single;

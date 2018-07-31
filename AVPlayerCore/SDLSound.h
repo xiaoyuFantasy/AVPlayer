@@ -15,9 +15,12 @@ public:
 	bool CloseAudio() override;
 	void SetCallback(funcDecodeFrame callback) override;
 	void Start() override;
-	void Pause() override;
+	void Pause(bool bPause) override;
 	void SetVolume(int value) override;
 	int GetVolume() override;
+	int GetWantedSampleRate() override;
+	int GetWantedChannels() override;
+	int GetWantedChannelLayout() override;
 
 protected:
 	static void audio_callback(void* userData, Uint8* stream, int len);
