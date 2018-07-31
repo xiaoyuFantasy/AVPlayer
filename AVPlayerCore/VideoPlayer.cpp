@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "VideoPlayer.h"
+#include "DecoderFactory.h"
 #include <Objbase.h>
 #pragma comment(lib, "Ole32.lib")
 
@@ -32,10 +33,16 @@ CVideoPlayer::CVideoPlayer(AVStream* pStream, IRender* render)
 	, m_pRender(render)
 	, m_queuePacket(MAX_VIDEO_SIZE)
 {
+	m_pDecoder = CDecoderFactory::getSingleModule().CreateDecoder();
 }
 
 CVideoPlayer::~CVideoPlayer()
 {
+}
+
+void CVideoPlayer::SetClockMgr(CClockMgr * clockMgr)
+{
+	m_pClockMgr = clockMgr;
 }
 
 bool CVideoPlayer::Open(PLAYER_OPTS &opts)
@@ -46,33 +53,9 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	m_opts = opts;
 	if (!CreateDecoder())
 		return false;
+
+	m_pRender->CreateRender(opts.hWnd, m_nWndWidth, m_nWndHeight);
 	av_log(NULL, AV_LOG_INFO, "Create Decoder");
-
-	MEMORY_BASIC_INFORMATION mbi;
-	static int dummy;
-	VirtualQuery(&dummy, &mbi, sizeof(mbi));
-	std::string strWndName = CreateGuidToString("PlayerPanoWnd_");
-	/*RECT rc;
-	GetWindowRect(m_opts.hWnd, &rc);
-	m_nWndWidth = rc.right - rc.left;
-	m_nWndHeight = rc.bottom - rc.top;
-	m_dVideoProportion = (double)m_nWndWidth / (double)m_nWndHeight;
-	PANO_INFO info{ strWndName.c_str(), (char*)strWndName.c_str(), 1, m_pCodecCtx->width, m_pCodecCtx->height, 0, 0, m_nWndWidth, m_nWndHeight, nullptr, PLAY_MODE::STANDARD, FRAME_FORMAT::VIDEO };
-	m_hPanoramicWnd = NativeOnCreate(m_opts.hWnd, m_opts.hInstance, nullptr, &info);
-
-	if (NORMAL_TYPE == m_opts.video_type)
-	{
-		if (!CreateSDLWindow())
-			return false;
-		av_log(NULL, AV_LOG_INFO, "Create SDL Window");
-		NativeSetPlayMode(m_hPanoramicWnd, PLAY_MODE::PANO2D);
-	}
-	else
-	{
-		NativeSetPlayMode(m_hPanoramicWnd, PLAY_MODE::STANDARD);
-		av_log(NULL, AV_LOG_INFO, "Create PANORAMIC Window");
-	}*/
-
 	m_queueFrame.Init();
 	m_queuePacket.Init();
 
@@ -82,11 +65,6 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	return true;
 }
 
-//void CVideoPlayer::SetAudioClock(IClock * pClock)
-//{
-//	m_pAudioClock = pClock;
-//}
-
 void CVideoPlayer::Play()
 {
 	if (!m_bOpen || m_bPlaying)
@@ -95,9 +73,8 @@ void CVideoPlayer::Play()
 	if (m_threadDecode.joinable())
 		m_threadDecode.join();
 
-	
 	DecodeThread();
-	RenderThread();
+	//RenderThread();
 
 	m_bPlaying = true;
 }
@@ -134,18 +111,8 @@ void CVideoPlayer::Stop()
 
 	if (m_pHWDeviceCtx)
 		av_buffer_unref(&m_pHWDeviceCtx);
-	
-	//NativeOnDestroy(m_hPanoramicWnd);
 
-	if (m_pWindow)
-		SDL_DestroyWindow(m_pWindow);
-
-	if (m_pRenderer)
-		SDL_DestroyRenderer(m_pRenderer);
-
-	if (m_pTexture)
-		SDL_DestroyTexture(m_pTexture);
-
+	m_pRender->DestoryRender();
 	m_bPlaying = false;
 }
 
@@ -172,74 +139,6 @@ void CVideoPlayer::ClearFrame()
 	m_bStopRender = false;
 	DecodeThread();
 	RenderThread();
-}
-
-void CVideoPlayer::SetPanormaicType(PLAY_MODE type)
-{
-	/*if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
-		NativeSetPlayMode(m_hPanoramicWnd, type);*/
-}
-
-void CVideoPlayer::SetPanoramicScale(float factor)
-{
-	/*if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
-		NativeSetScale(m_hPanoramicWnd, factor);*/
-}
-
-void CVideoPlayer::SetPanoramicRotate(float x, float y)
-{
-	/*if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
-		NativeSetRotate(m_hPanoramicWnd, x, y);*/
-}
-
-void CVideoPlayer::SetPanoramicScroll(float latitude, float longitude)
-{
-	/*if (m_bPlaying && m_opts.video_type == PANORAMIC_TYPE)
-		NativeSetScroll(m_hPanoramicWnd, latitude, longitude);*/
-}
-
-void CVideoPlayer::SetWindowSize(int nWidth, int nHeight)
-{
-	m_mutexTexture.lock();
-	if (nWidth > (nHeight * m_dVideoProportion))
-	{
-		m_nWndWidth = nHeight * m_dVideoProportion;
-		m_nWndHeight = nHeight;
-	}
-	else
-	{
-		m_nWndWidth = nWidth;
-		m_nWndHeight = nWidth / m_dVideoProportion;
-	}
-	if (NORMAL_TYPE == m_opts.video_type)
-	{
-		SDL_Rect sdl_rect;
-		sdl_rect.x = 0;
-		sdl_rect.y = 0;
-		sdl_rect.w = m_nWndWidth;
-		sdl_rect.h = m_nWndHeight;
-		SDL_DestroyTexture(m_pTexture);
-		SDL_DestroyRenderer(m_pRenderer);
-		m_pRenderer = SDL_CreateRenderer(m_pWindow, -1, SDL_RENDERER_ACCELERATED);
-		if (!m_pRenderer)
-		{
-			av_log(NULL, AV_LOG_WARNING, "Creat Hardware Render Failed!!!");
-			m_pRenderer = SDL_CreateRenderer(m_pWindow, -1, SDL_RENDERER_SOFTWARE);
-		}
-		//SDL_RenderSetViewport(m_pRenderer, &sdl_rect);
-		m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, m_pCodecCtx->width, m_pCodecCtx->height);
-	}
-	else
-	{
-		/*int left = (nWidth - m_nWndWidth) / 2;
-		int top = (nHeight - m_nWndHeight) / 2;
-		av_log(nullptr, AV_LOG_INFO, "width :%d, height:%d", nWidth, nHeight);
-		av_log(nullptr, AV_LOG_INFO, "Proportion: %f", m_dVideoProportion);
-		av_log(nullptr, AV_LOG_INFO, "left :%d, top:%d", left, top);
-		if (m_hPanoramicWnd)
-			NativeUpdateViewport(m_hPanoramicWnd, 0, 0, nWidth, nHeight);*/
-	}
-	m_mutexTexture.unlock();
 }
 
 void CVideoPlayer::PushPacket(PacketPtr && packet_ptr)
@@ -298,6 +197,8 @@ bool CVideoPlayer::CreateDecoder()
 		return false;
 	}
 
+	m_pDecoder->Init(m_pCodecCtx);
+
 	m_nWndWidth = m_pCodecCtx->width;
 	m_nWndHeight = m_pCodecCtx->height;
 
@@ -310,7 +211,7 @@ bool CVideoPlayer::CreateDecoder()
 	m_pSwsCtx = sws_getContext(
 		m_pCodecCtx->width,
 		m_pCodecCtx->height,
-		AV_PIX_FMT_NV12,//m_pCodexCtx->pix_fmt,
+		AV_PIX_FMT_NV12,
 		m_pFrameOut->width,
 		m_pFrameOut->height,
 		(AVPixelFormat)m_pFrameOut->format,
@@ -351,36 +252,6 @@ bool CVideoPlayer::CreateDecoder()
 	return true;
 }
 
-bool CVideoPlayer::CreateSDLWindow()
-{
-	if (::IsWindow(m_opts.hWnd))
-		m_pWindow = SDL_CreateWindowFrom(m_opts.hWnd);
-	else
-	{
-		std::string strWndName = CreateGuidToString("PlayerWnd_");
-		m_pWindow = SDL_CreateWindow(strWndName.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_nWndWidth, m_nWndHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-	}
-
-	m_pRenderer = SDL_CreateRenderer(m_pWindow, -1, SDL_RENDERER_ACCELERATED);
-	if (!m_pRenderer)
-	{
-		av_log(NULL, AV_LOG_WARNING, "Creat Hardware Render Failed!!!");
-		m_pRenderer = SDL_CreateRenderer(m_pWindow, -1, SDL_RENDERER_SOFTWARE);
-	}
-
-	if (!m_pRenderer)
-	{
-		av_log(NULL, AV_LOG_ERROR, "Create Hardware or Software Render Failed!!!");
-		SDL_DestroyWindow(m_pWindow);
-		m_pWindow = nullptr;
-		return false;
-	}
-
-	m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, m_pCodecCtx->width, m_pCodecCtx->height);
-
-	return true;
-}
-
 void CVideoPlayer::DecodeThread()
 {
 	m_threadDecode = std::thread([&]() {
@@ -395,8 +266,14 @@ void CVideoPlayer::DecodeThread()
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				continue;
 			}
-
-			PacketPtr packet{ nullptr, [](AVPacket* p) { av_packet_free(&p); } };
+			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
+			if (m_pDecoder->DecodeFrame(pFrame.get(), m_queuePacket) >= 0)
+			{
+				av_log(NULL, AV_LOG_INFO, "DecodeFrame");
+				m_queueFrame.Push(std::move(pFrame));
+			}
+			
+			/*PacketPtr packet{ nullptr, [](AVPacket* p) { av_packet_free(&p); } };
 			if (!m_queuePacket.Pop(packet))
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(40));
@@ -439,7 +316,7 @@ void CVideoPlayer::DecodeThread()
 				{
 					m_queueFrame.Push(std::move(pFrame));
 				}
-			}
+			}*/
 		}
 
 		av_log(NULL, AV_LOG_INFO, "Video Decode Thread End!!!");
@@ -472,12 +349,12 @@ void CVideoPlayer::RenderThread()
 
 				video_pts *= av_q2d(m_pStream->time_base);
 				video_pts = SyncVideo(pFrame.get(), video_pts);
-				if (m_pAudioClock)
+				if (m_pClockMgr->GetAudioClock() > 0)
 				{
 					double audio_pts; //ÒôÆµpts
 					while (!m_bStopRender && !m_bPaused && !m_bQuit)
 					{
-						audio_pts = m_pAudioClock->GetClock();
+						audio_pts = m_pClockMgr->GetAudioClock();
 						//av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
 						if (video_pts <= audio_pts)
 							break;
@@ -508,23 +385,7 @@ void CVideoPlayer::RenderThread()
 					m_opts.progreeeCb(m_opts.user_data, video_pts);
 			}
 
-			m_mutexTexture.lock();
-			/*if(m_opts.video_type == PANORAMIC_TYPE)
-				NativeSetFrameData(m_hPanoramicWnd, STREAM_FORMAT::FRAME_FORMAT_YUV, m_pFrameOut->data);
-			else*/
-			{
-				SDL_Rect sdl_rect;
-				sdl_rect.x = 0;
-				sdl_rect.y = 0;
-				sdl_rect.w = m_nWndWidth;
-				sdl_rect.h = m_nWndHeight;
-				SDL_UpdateTexture(m_pTexture, NULL, m_pFrameOut->data[0], m_pFrameOut->linesize[0]);
-				SDL_RenderClear(m_pRenderer);
-				SDL_RenderCopy(m_pRenderer, m_pTexture, NULL, &sdl_rect);
-				SDL_RenderPresent(m_pRenderer);
-			}
-			
-			m_mutexTexture.unlock();
+			m_pRender->RenderFrameData(m_pFrameOut);
 			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 		av_log(NULL, AV_LOG_INFO, "Video Render Thread End!!!");

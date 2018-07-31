@@ -54,9 +54,6 @@
     <ClInclude Include="Queue.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Clock.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="AudioDefine.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -108,6 +105,9 @@
     <ClInclude Include="SingleModule.h">
       <Filter>Single</Filter>
     </ClInclude>
+    <ClInclude Include="ClockMgr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -151,6 +151,9 @@
     </ClCompile>
     <ClCompile Include="RenderFactory.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="ClockMgr.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

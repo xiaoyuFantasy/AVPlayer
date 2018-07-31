@@ -6,7 +6,7 @@
 #include "SoundDefine.h"
 #include "DecoderDefine.h"
 #include "Player.h"
-#include "Clock.h"
+#include "ClockMgr.h"
 
 #define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio
 #define MAX_AUDIO_SIZE (1024) //25 * 16 * 1024
@@ -18,6 +18,7 @@ public:
 	virtual ~CAudioPlayer();
 
 public:
+	void SetClockMgr(CClockMgr* clockMgr = nullptr);
 	bool Open(PLAYER_OPTS &opts);
 	void Close();
 	double GetClock();
@@ -44,5 +45,6 @@ private:
 	double				m_pts = 0.0;
 	ISound*				m_pSound = nullptr;
 	IDecoder*			m_pDecoder = nullptr;
+	CClockMgr*			m_pClockMgr = nullptr;
 };
 

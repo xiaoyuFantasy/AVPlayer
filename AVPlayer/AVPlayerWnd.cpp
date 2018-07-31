@@ -105,7 +105,7 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 	{
 		if (_tcscmp(msg.pSender->GetName(), _T("btnPlay")) == 0)
 		{
-			if (m_pVideo->m_funcIsPlaying(m_pVideo->m_hPlayer))
+			if (m_pVideo->m_funcIsPlaying && m_pVideo->m_funcIsPlaying(m_pVideo->m_hPlayer))
 			{
 				m_pVideo->m_funcPause(m_pVideo->m_hPlayer, false);
 				m_pBtnPlay->SetVisible(false);
@@ -258,7 +258,7 @@ void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
 		::PathStripPath(szUrl);
 		m_pLabelName->SetText(szUrl);
 		m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
-		//m_opts.bEnableVideo = false;
+		m_opts.bEnableAudio = false;
 		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
 		m_pVideo->m_funcPlay(m_pVideo->m_hPlayer, m_opts);
 		m_pBtnPlay->SetVisible(false);

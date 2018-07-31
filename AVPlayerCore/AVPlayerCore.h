@@ -7,6 +7,7 @@
 
 #include "AudioPlayer.h"
 #include "VideoPlayer.h"
+#include "ClockMgr.h"
 
 
 class CAVPlayerCore
@@ -55,4 +56,5 @@ private:
 	CAudioPlayer*		m_pAudioPlayer = nullptr;
 	IRender*			m_pRender = nullptr;
 	ISound*				m_pSound = nullptr;
+	CClockMgr			m_clockMgr;
 };

@@ -25,14 +25,12 @@ bool CGlRender::InitRender()
 	return false;
 }
 
-bool CGlRender::CreateRender(HWND hWnd)
+bool CGlRender::CreateRender(HWND hWnd, int nWidth, int nHeight)
 {
 	if (!::IsWindow(hWnd))
 		return false;
 	
-	RECT rc;
-	GetWindowRect(hWnd, &rc);
-	m_pWindow = glfwCreateWindow(rc.right - rc.left, rc.bottom - rc.top, "glwindow", nullptr, nullptr);
+	m_pWindow = glfwCreateWindow(nWidth, nHeight, "glwindow", nullptr, nullptr);
 	if (!m_pWindow)
 	{
 		av_log(NULL, AV_LOG_ERROR, "create glwindow failed!!!");
@@ -40,7 +38,7 @@ bool CGlRender::CreateRender(HWND hWnd)
 	}
 
 	glfwSetFramebufferSizeCallback(m_pWindow, resize_callback);
-	glViewport(0, 0, rc.right - rc.left, rc.bottom - rc.top);
+	glViewport(0, 0, nWidth, nHeight);
 
 	m_hWnd = m_hWnd;
 	return false;

@@ -5,7 +5,7 @@ class CLock
 {
 public:
 	CLock(std::mutex &mx)
-		:m_mutex(std::move(mx))
+		:m_mutex(mx)
 	{
 		m_mutex.lock();
 	}
@@ -15,6 +15,6 @@ public:
 	}
 
 private:
-	std::mutex &&m_mutex;
+	std::mutex &m_mutex;
 };
 

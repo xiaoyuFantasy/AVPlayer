@@ -14,7 +14,7 @@ public:
 
 public:
 	bool InitRender() override;
-	bool CreateRender(HWND hWnd) override;
+	bool CreateRender(HWND hWnd, int nWidth, int nHeight) override;
 	void DestoryRender() override;
 	bool SetRenderMode(RENDER_MODE) override;
 	void SetRenderSize(int width, int height) override;

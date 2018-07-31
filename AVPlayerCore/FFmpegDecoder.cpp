@@ -40,7 +40,7 @@ int CFFmpegDecoder::DecodeFrame(AVFrame * frame, PacketQueue & queue)
 				if (ret >= 0)
 				{
 					pTempFrame->pts = pTempFrame->best_effort_timestamp;
-					if (m_pCodecCtx->hwaccel_context)
+					if (m_pCodecCtx->hw_device_ctx)
 					{
 						if ((ret = av_hwframe_transfer_data(frame, pTempFrame.get(), 0)) < 0)
 						{

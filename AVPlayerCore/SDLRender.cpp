@@ -17,7 +17,7 @@ bool CSDLRender::InitRender()
 	return true;
 }
 
-bool CSDLRender::CreateRender(HWND hWnd)
+bool CSDLRender::CreateRender(HWND hWnd, int nWidth, int nHeight)
 {
 	if (!::IsWindow(hWnd))
 		return false;
@@ -25,10 +25,8 @@ bool CSDLRender::CreateRender(HWND hWnd)
 	if (m_pWindow)
 		return false;
 
-	RECT rc;
-	GetWindowRect(hWnd, &rc);
-	m_nWndWidth = rc.right - rc.left;
-	m_nWndHeight = rc.bottom - rc.top;
+	m_nWndWidth = nWidth;
+	m_nWndHeight = nHeight;
 	m_pWindow = SDL_CreateWindowFrom(hWnd);
 	m_pRenderer = SDL_CreateRenderer(m_pWindow, -1, SDL_RENDERER_ACCELERATED);
 	if (!m_pRenderer)
@@ -42,7 +40,7 @@ bool CSDLRender::CreateRender(HWND hWnd)
 		return false;
 	}
 
-	m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, m_nWndWidth, m_nWndHeight);
+	m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_NV12, SDL_TEXTUREACCESS_STREAMING, m_nWndWidth, m_nWndHeight);
 	return true;
 }
 

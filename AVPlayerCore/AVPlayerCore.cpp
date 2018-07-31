@@ -67,10 +67,11 @@ bool CAVPlayerCore::Play()
 
 	if (m_nAudioIndex != -1 && m_opts.bEnableAudio)
 	{
-		m_pSound = CSingleModule<CSoundFactory>::getSingleModule().CreateSound();
+		m_pSound = CSoundFactory::getSingleModule().CreateSound();
 		m_pSound->InitAudio();
 
 		m_pAudioPlayer = new CAudioPlayer(m_pFormatCtx->streams[m_nAudioIndex], m_pSound);
+		m_pAudioPlayer->SetClockMgr(&m_clockMgr);
 		if (m_pAudioPlayer->Open(m_opts))
 			m_bAudioOpen = true;
 		else
@@ -82,21 +83,18 @@ bool CAVPlayerCore::Play()
 
 	if (m_nVideoIndex != -1 && m_opts.bEnableVideo)
 	{
-		m_pRender = CSingleModule<CRenderFactory>::getSingleModule().CreateRender();
+		m_pRender = CRenderFactory::getSingleModule().CreateRender();
 		m_pRender->InitRender();
 
-		m_pVideoPlayer = new CVideoPlayer(m_pFormatCtx->streams[m_nVideoIndex]);
-		/*if (m_pVideoPlayer->Open(m_opts))
-		{
-			if (m_bAudioOpen)
-				m_pVideoPlayer->SetAudioClock(m_pAudioPlayer);
+		m_pVideoPlayer = new CVideoPlayer(m_pFormatCtx->streams[m_nVideoIndex], m_pRender);
+		m_pVideoPlayer->SetClockMgr(&m_clockMgr);
+		if (m_pVideoPlayer->Open(m_opts))
 			m_bVideoOpen = true;
-		}
 		else
 		{
 			delete m_pVideoPlayer;
 			m_pVideoPlayer = nullptr;
-		}*/
+		}
 	}
 
 	if (!m_bAudioOpen && !m_bVideoOpen)
@@ -277,32 +275,32 @@ bool CAVPlayerCore::IsMuted() const
 
 void CAVPlayerCore::SetPanormaicType(PLAY_MODE type)
 {
-	if (m_bVideoOpen && m_pVideoPlayer)
-		m_pVideoPlayer->SetPanormaicType(type);
+	/*if (m_bVideoOpen && m_pRender)
+		m_pRender->SetRenderMode(type);*/
 }
 
 void CAVPlayerCore::SetPanoramicScale(float factor)
 {
-	if (m_bVideoOpen && m_pVideoPlayer)
-		m_pVideoPlayer->SetPanoramicScale(factor);
+	if (m_bVideoOpen && m_pRender)
+		m_pRender->SetScale(factor);
 }
 
 void CAVPlayerCore::SetPanoramicRotate(float x, float y)
 {
-	if (m_bVideoOpen && m_pVideoPlayer)
-		m_pVideoPlayer->SetPanoramicRotate(x, y);
+	if (m_bVideoOpen && m_pRender)
+		m_pRender->SetRotate(x, y);
 }
 
 void CAVPlayerCore::SetPanoramicScroll(float latitude, float longitude)
 {
-	if (m_bVideoOpen && m_pVideoPlayer)
-		m_pVideoPlayer->SetPanoramicScroll(latitude, longitude);
+	if (m_bVideoOpen && m_pRender)
+		m_pRender->SetScroll(latitude, longitude);
 }
 
 void CAVPlayerCore::SetWindowSize(int nWidth, int nHeight)
 {
-	if (m_bVideoOpen && m_pVideoPlayer)
-		m_pVideoPlayer->SetWindowSize(nWidth, nHeight);
+	if (m_bVideoOpen && m_pRender)
+		m_pRender->SetRenderSize(nWidth, nHeight);
 }
 
 int CAVPlayerCore::interrupt_callback(void * lparam)
