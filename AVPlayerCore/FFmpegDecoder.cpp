@@ -16,8 +16,16 @@ bool CFFmpegDecoder::Init(AVCodecContext * ctx)
 	return true;
 }
 
+void CFFmpegDecoder::UnInit()
+{
+	m_pCodecCtx = nullptr;
+}
+
 int CFFmpegDecoder::DecodeFrame(AVFrame * frame, PacketQueue & queue)
 {
+	if (!m_pCodecCtx || !frame)
+		return -1;
+
 	int ret = AVERROR(EAGAIN);
 	FramePtr pTempFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
 	for (;;)
@@ -31,8 +39,8 @@ int CFFmpegDecoder::DecodeFrame(AVFrame * frame, PacketQueue & queue)
 				if (ret >= 0)
 				{
 					AVRational tb{ 1, frame->sample_rate };
-					if (frame->pts != AV_NOPTS_VALUE)
-						frame->pts = av_rescale_q(frame->pts, m_pCodecCtx->pkt_timebase, tb);
+					if (frame->pts == AV_NOPTS_VALUE)
+						frame->pts = av_rescale_q(frame->pts, m_pCodecCtx->pkt_timebase, tb) + frame->pkt_duration;
 				}
 				break;
 			case AVMEDIA_TYPE_VIDEO:

@@ -10,6 +10,7 @@ public:
 
 public:
 	virtual bool Init(AVCodecContext* ctx) override;
+	virtual void UnInit() override;
 	virtual int DecodeFrame(AVFrame* frame, PacketQueue& queue) override;
 
 private:

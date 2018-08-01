@@ -3,6 +3,7 @@
 #include <queue>
 #include <atomic>
 #include <condition_variable>
+#include "Lock.h"
 
 template <class T>
 class CQueue
@@ -25,6 +26,7 @@ protected:
 private:
 	size_t			m_size;
 	std::queue<T>	m_queue;
+	std::mutex		m_mutexQueue;
 	std::mutex		m_mutex;
 	std::atomic_bool	m_quit = false;
 	std::condition_variable	m_cvFull;
@@ -59,6 +61,7 @@ size_t CQueue<T>::Size()
 template<class T>
 size_t CQueue<T>::Count()
 {
+	CAutoLock lock(m_mutexQueue);
 	return m_queue.size();
 }
 
@@ -77,11 +80,13 @@ bool CQueue<T>::Push(T && data)
 	std::unique_lock<std::mutex> lock(m_mutex);
 	if (!m_quit)
 	{
-		if (m_queue.size () >= m_size)
+		if (Count() >= m_size)
 			m_cvFull.wait(lock);
-
-		m_queue.push(std::move(data));
-		m_cvEmpty.notify_all();
+		{
+			CAutoLock lock(m_mutexQueue);
+			m_queue.push(std::move(data));
+		}
+		m_cvEmpty.notify_one();
 		return true;
 	}
 
@@ -94,12 +99,14 @@ bool CQueue<T>::Pop(T & data)
 	std::unique_lock<std::mutex> lock(m_mutex);
 	if (!m_quit)
 	{
-		if (m_queue.empty())
+		if (Count() == 0)
 			m_cvEmpty.wait(lock);
-		
-		data = std::move(m_queue.front());
-		m_queue.pop();
-		m_cvFull.notify_all();
+		{
+			CAutoLock autolock(m_mutexQueue);
+			data = std::move(m_queue.front());
+			m_queue.pop();
+		}
+		m_cvFull.notify_one();
 		return true;
 	}
 	return false;
@@ -108,7 +115,7 @@ bool CQueue<T>::Pop(T & data)
 template<class T>
 void CQueue<T>::Clear()
 {
-	std::unique_lock<std::mutex> lock(m_mutex);
+	CAutoLock autolock(m_mutexQueue);
 	while (!m_queue.empty())
 		m_queue.pop();
 }

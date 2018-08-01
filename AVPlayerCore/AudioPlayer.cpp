@@ -13,6 +13,7 @@ CAudioPlayer::CAudioPlayer(AVStream* pStream, ISound *pSound)
 
 CAudioPlayer::~CAudioPlayer()
 {
+	CDecoderFactory::getSingleModule().ReleaseDecoder(&m_pDecoder);
 }
 
 void CAudioPlayer::SetClockMgr(CClockMgr * clockMgr)
@@ -103,7 +104,6 @@ bool CAudioPlayer::CreateDecoder()
 		return false;
 	}
 
-	
 	m_pDecoder->Init(m_pCodecCtx);
 	return true;
 }
@@ -159,7 +159,7 @@ int CAudioPlayer::funcDecodeFrame(uint8_t ** buffer)
 		m_clock = pts + (double)frame->nb_samples / (double)frame->sample_rate;
 	else
 		m_clock = NAN;
-	
+
 	if (m_pClockMgr)
 		m_pClockMgr->SetAudioClock(m_clock);
 	return nResampledDataSize;

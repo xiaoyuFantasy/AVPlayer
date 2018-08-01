@@ -28,9 +28,9 @@ std::string CreateGuidToString(char *str)
 }
 
 CVideoPlayer::CVideoPlayer(AVStream* pStream, IRender* render)
-	: m_queueFrame(50)
-	, m_pStream(pStream)
+	: m_pStream(pStream)
 	, m_pRender(render)
+	, m_queueFrame(50)
 	, m_queuePacket(MAX_VIDEO_SIZE)
 {
 	m_pDecoder = CDecoderFactory::getSingleModule().CreateDecoder();
@@ -74,7 +74,7 @@ void CVideoPlayer::Play()
 		m_threadDecode.join();
 
 	DecodeThread();
-	//RenderThread();
+	RenderThread();
 
 	m_bPlaying = true;
 }
@@ -268,55 +268,7 @@ void CVideoPlayer::DecodeThread()
 			}
 			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
 			if (m_pDecoder->DecodeFrame(pFrame.get(), m_queuePacket) >= 0)
-			{
-				av_log(NULL, AV_LOG_INFO, "DecodeFrame");
 				m_queueFrame.Push(std::move(pFrame));
-			}
-			
-			/*PacketPtr packet{ nullptr, [](AVPacket* p) { av_packet_free(&p); } };
-			if (!m_queuePacket.Pop(packet))
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(40));
-				continue;
-			}
-
-			int ret = avcodec_send_packet(m_pCodecCtx, packet.get());
-			if (ret != 0 && ret != AVERROR(EAGAIN) || ret == AVERROR_EOF)
-			{
-				av_log(NULL, AV_LOG_ERROR, "video codec send packet error. err:%d", ret);
-				continue;
-			}
-
-			while ((ret == 0 || ret == AVERROR(EAGAIN)) && !m_bStopDecode && !m_bQuit)
-			{
-				FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
-				FramePtr pSWFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
-				ret = avcodec_receive_frame(m_pCodecCtx, pFrame.get());
-				if (ret != 0)
-					break;
-
-				if (AV_HWDEVICE_TYPE_NONE != m_typeCodec)
-				{
-					if ((ret = av_hwframe_transfer_data(pSWFrame.get(), pFrame.get(), 0)) < 0)
-					{
-						av_log(NULL, AV_LOG_ERROR, "Error transferring the data to system memory. err:%d", ret);
-						continue;
-					}
-
-					pSWFrame->pts = pFrame->pts;
-					pSWFrame->pkt_dts = pFrame->pkt_dts;
-					pSWFrame->pkt_pos = pFrame->pkt_pos;
-					pSWFrame->pkt_duration = pFrame->pkt_duration;
-					pSWFrame->pkt_size = pFrame->pkt_size;
-					pSWFrame->best_effort_timestamp = pFrame->best_effort_timestamp;
-					pSWFrame->repeat_pict = pFrame->repeat_pict;
-					m_queueFrame.Push(std::move(pSWFrame));
-				}
-				else
-				{
-					m_queueFrame.Push(std::move(pFrame));
-				}
-			}*/
 		}
 
 		av_log(NULL, AV_LOG_INFO, "Video Decode Thread End!!!");
@@ -338,7 +290,6 @@ void CVideoPlayer::RenderThread()
 			FramePtr pFrame{ nullptr, [](AVFrame* p) { av_frame_free(&p); } };
 			if (m_queueFrame.Pop(pFrame))
 			{
-				//m_queueFrame.Pop(pFrame);
 				double video_pts = 0; //当前视频的pts
 				if (pFrame->pts == AV_NOPTS_VALUE && pFrame->opaque && *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE)
 					video_pts = *(int64_t *)pFrame->opaque;
@@ -351,11 +302,11 @@ void CVideoPlayer::RenderThread()
 				video_pts = SyncVideo(pFrame.get(), video_pts);
 				if (m_pClockMgr->GetAudioClock() > 0)
 				{
-					double audio_pts; //音频pts
+					double audio_pts;// = m_pClockMgr->GetAudioClock(); //音频pts
 					while (!m_bStopRender && !m_bPaused && !m_bQuit)
 					{
 						audio_pts = m_pClockMgr->GetAudioClock();
-						//av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
+						av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
 						if (video_pts <= audio_pts)
 							break;
 

@@ -22,6 +22,7 @@ public:
 private:
 	int		m_nWndWidth = 0;
 	int		m_nWndHeight = 0;
+	std::atomic_bool m_bSizeChanged = false;
 	SDL_Window*		m_pWindow = nullptr;
 	SDL_Renderer*	m_pRenderer = nullptr;
 	SDL_Texture*	m_pTexture = nullptr;

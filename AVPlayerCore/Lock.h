@@ -1,15 +1,15 @@
 #pragma once
 #include <mutex>
 
-class CLock
+class CAutoLock
 {
 public:
-	CLock(std::mutex &mx)
+	CAutoLock(std::mutex &mx)
 		:m_mutex(mx)
 	{
 		m_mutex.lock();
 	}
-	virtual ~CLock() 
+	virtual ~CAutoLock() 
 	{
 		m_mutex.unlock();
 	}
