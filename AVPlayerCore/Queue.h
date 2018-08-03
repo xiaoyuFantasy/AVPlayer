@@ -16,12 +16,10 @@ public:
 	size_t	Size();
 	size_t	Count();
 	void	Quit();
+	void	Clear();
 
 	bool Push(T &&data);
 	bool Pop(T &data);
-
-protected:
-	void Clear();
 
 private:
 	size_t			m_size;

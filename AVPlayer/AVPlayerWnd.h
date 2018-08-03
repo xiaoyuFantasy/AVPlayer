@@ -42,6 +42,7 @@ private:
 	CButtonUI*	m_pBtnVolume = nullptr;
 	CButtonUI*	m_pBtnVolumeZero = nullptr;
 	CSliderUI*	m_pSliderVolume = nullptr;
+	float		m_scale = 0.5f;
 	std::map<std::wstring, std::wstring>	m_mapCmd;
 };
 

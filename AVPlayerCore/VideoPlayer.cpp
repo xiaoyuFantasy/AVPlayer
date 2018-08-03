@@ -268,7 +268,9 @@ void CVideoPlayer::DecodeThread()
 			}
 			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
 			if (m_pDecoder->DecodeFrame(pFrame.get(), m_queuePacket) >= 0)
+			{
 				m_queueFrame.Push(std::move(pFrame));
+			}
 		}
 
 		av_log(NULL, AV_LOG_INFO, "Video Decode Thread End!!!");
@@ -300,13 +302,17 @@ void CVideoPlayer::RenderThread()
 
 				video_pts *= av_q2d(m_pStream->time_base);
 				video_pts = SyncVideo(pFrame.get(), video_pts);
+
+				double pts = (pFrame->best_effort_timestamp - m_pStream->start_time) * av_q2d(m_pStream->time_base);
+				av_log(NULL, AV_LOG_INFO, "frame pts:%f, video pts:%f", pts, video_pts);
+
 				if (m_pClockMgr->GetAudioClock() > 0)
 				{
 					double audio_pts;// = m_pClockMgr->GetAudioClock(); //ÒôÆµpts
 					while (!m_bStopRender && !m_bPaused && !m_bQuit)
 					{
 						audio_pts = m_pClockMgr->GetAudioClock();
-						av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
+						//av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
 						if (video_pts <= audio_pts)
 							break;
 

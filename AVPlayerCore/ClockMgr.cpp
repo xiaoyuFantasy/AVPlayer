@@ -11,6 +11,11 @@ CClockMgr::~CClockMgr()
 {
 }
 
+int64_t CClockMgr::GetAudioStartTime() const
+{
+	return m_timeAudioStart;
+}
+
 void CClockMgr::SetAudioClock(double dclock)
 {
 	CAutoLock lock(m_mutexAudio);

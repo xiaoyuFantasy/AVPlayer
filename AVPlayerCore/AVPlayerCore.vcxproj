@@ -158,7 +158,6 @@
     <ClInclude Include="FFmpegDecoder.h" />
     <ClInclude Include="DecoderFactory.h" />
     <ClInclude Include="GlRender.h" />
-    <ClInclude Include="Player.h" />
     <ClInclude Include="AVPlayerCore.h" />
     <ClInclude Include="AVPlayerDefine.h" />
     <ClInclude Include="AVPlayerDll.h" />

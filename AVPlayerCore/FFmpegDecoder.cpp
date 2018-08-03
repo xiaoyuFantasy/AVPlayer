@@ -47,7 +47,6 @@ int CFFmpegDecoder::DecodeFrame(AVFrame * frame, PacketQueue & queue)
 				ret = avcodec_receive_frame(m_pCodecCtx, pTempFrame.get());
 				if (ret >= 0)
 				{
-					pTempFrame->pts = pTempFrame->best_effort_timestamp;
 					if (m_pCodecCtx->hw_device_ctx)
 					{
 						if ((ret = av_hwframe_transfer_data(frame, pTempFrame.get(), 0)) < 0)
@@ -55,14 +54,7 @@ int CFFmpegDecoder::DecodeFrame(AVFrame * frame, PacketQueue & queue)
 							av_log(NULL, AV_LOG_ERROR, "Error transferring the data to system memory. err:%d", ret);
 							continue;
 						}
-
-						frame->pts = pTempFrame->pts;
-						frame->pkt_dts = pTempFrame->pkt_dts;
-						frame->pkt_pos = pTempFrame->pkt_pos;
-						frame->pkt_duration = pTempFrame->pkt_duration;
-						frame->pkt_size = pTempFrame->pkt_size;
-						frame->best_effort_timestamp = pTempFrame->best_effort_timestamp;
-						frame->repeat_pict = pTempFrame->repeat_pict;
+						av_frame_copy_props(frame, pTempFrame.get());
 					}
 				}
 				break;

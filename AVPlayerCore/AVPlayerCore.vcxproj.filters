@@ -63,9 +63,6 @@
     <ClInclude Include="AVPlayerDll.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="AVPlayer.h">
       <Filter>头文件</Filter>
     </ClInclude>

@@ -5,7 +5,6 @@
 #include "AVPlayerDefine.h"
 #include "SoundDefine.h"
 #include "DecoderDefine.h"
-#include "Player.h"
 #include "ClockMgr.h"
 
 #define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio

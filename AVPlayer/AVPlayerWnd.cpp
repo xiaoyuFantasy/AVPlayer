@@ -197,6 +197,26 @@ LRESULT CAVPlayerWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lPara
 	{
 		m_pSliderPlay->SetValue(wParam);
 	}
+	else if (uMsg == WM_MOUSEWHEEL)
+	{
+		int fwKeys = GET_KEYSTATE_WPARAM(wParam);
+		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		if (zDelta < 0)
+			m_scale += 0.1f;
+		else
+			m_scale -= 0.1f;
+
+		if (m_scale < 0.5f)
+			m_scale = 0.5f;
+
+		if (m_scale > 1.5f)
+			m_scale = 1.5f;
+
+		m_pVideo->m_funcSetPanoScale(m_pVideo->m_hPlayer, m_scale);
+		/*int xPos = LOWORD(lParam);
+		int yPos = HIWORD(lParam);
+		player.m_funcSetPanoRotate(player.m_hPlayer, m_xCurrPos, m_yCurrPos);*/
+	}
 	return __super::HandleCustomMessage(uMsg, wParam, lParam, bHandled);
 }
 

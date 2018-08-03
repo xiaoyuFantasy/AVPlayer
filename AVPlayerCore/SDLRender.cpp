@@ -30,8 +30,6 @@ bool CSDLRender::CreateRender(HWND hWnd, int nWidth, int nHeight)
 	m_nWndWidth = rc.right - rc.left;
 	m_nWndHeight = rc.bottom - rc.top;
 	m_pWindow = SDL_CreateWindowFrom(hWnd);
-	//SDL_SetWindowBordered(m_pWindow, SDL_FALSE);
-	//SDL_SetWindowResizable(m_pWindow, SDL_FALSE);
 	m_pRenderer = SDL_CreateRenderer(m_pWindow, -1, SDL_RENDERER_ACCELERATED);
 	if (!m_pRenderer)
 		m_pRenderer = SDL_CreateRenderer(m_pWindow, -1, SDL_RENDERER_SOFTWARE);
@@ -98,6 +96,8 @@ void CSDLRender::RenderFrameData(AVFrame *frame)
 
 void CSDLRender::SetScale(float factor)
 {
+	/*if (m_pRenderer)
+		SDL_RenderSetScale(m_pRenderer, factor, factor);*/
 }
 
 void CSDLRender::SetRotate(float x, float y)
