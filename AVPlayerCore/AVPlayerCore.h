@@ -40,7 +40,7 @@ protected:
 	static int interrupt_callback(void * lparam);
 
 private:
-	PLAYER_OPTS		m_opts;
+	PLAYER_OPTS			m_opts;
 	AVFormatContext*	m_pFormatCtx = nullptr;
 	int64_t				m_duration = 0;
 	std::atomic_bool	m_bQuit = false;

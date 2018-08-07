@@ -25,6 +25,9 @@
     <Filter Include="Single">
       <UniqueIdentifier>{adfb8804-d78c-4711-a67e-f2baa15e6f0d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="player">
+      <UniqueIdentifier>{3653eb2d-de69-48bb-9e64-5c829fc8c633}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -105,6 +108,9 @@
     <ClInclude Include="ClockMgr.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="PlayerImpl.h">
+      <Filter>player</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -151,6 +157,9 @@
     </ClCompile>
     <ClCompile Include="ClockMgr.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerImpl.cpp">
+      <Filter>player</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

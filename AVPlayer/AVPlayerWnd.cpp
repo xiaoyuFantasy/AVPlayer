@@ -278,9 +278,11 @@ void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
 		::PathStripPath(szUrl);
 		m_pLabelName->SetText(szUrl);
 		m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
-		//m_opts.bEnableAudio = false;
+		m_opts.bEnableAudio = false;
 		//m_opts.bEnableVideo = false;
 		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
+		//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
+		//m_opts.strPath = "rtmp://192.168.160.132/live/vr";
 		m_pVideo->m_funcPlay(m_pVideo->m_hPlayer, m_opts);
 		m_pBtnPlay->SetVisible(false);
 		m_pBtnPause->SetVisible();

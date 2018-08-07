@@ -27,17 +27,25 @@ std::string CreateGuidToString(char *str)
 	return strTemp;
 }
 
-CVideoPlayer::CVideoPlayer(AVStream* pStream, IRender* render)
-	: m_pStream(pStream)
-	, m_pRender(render)
-	, m_queueFrame(50)
+CVideoPlayer::CVideoPlayer()
+	: m_queueFrame(50)
 	, m_queuePacket(MAX_VIDEO_SIZE)
 {
-	m_pDecoder = CDecoderFactory::getSingleModule().CreateDecoder();
+	
 }
 
 CVideoPlayer::~CVideoPlayer()
 {
+}
+
+void CVideoPlayer::SetRender(IRender * render)
+{
+	m_pRender = render;
+}
+
+void CVideoPlayer::SetStream(AVStream * pStream)
+{
+	m_pStream = pStream;
 }
 
 void CVideoPlayer::SetClockMgr(CClockMgr * clockMgr)
@@ -50,6 +58,8 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	if (m_bOpen)
 		return false;
 
+	m_pDecoder = CDecoderFactory::getSingleModule().CreateDecoder();
+	
 	m_opts = opts;
 	if (!CreateDecoder())
 		return false;
@@ -86,12 +96,12 @@ bool CVideoPlayer::IsPlaying()
 
 void CVideoPlayer::Pause(bool IsPause)
 {
-	m_bPaused = IsPause;
+	m_bPause = IsPause;
 }
 
 bool CVideoPlayer::IsPaused()
 {
-	return m_bPaused;
+	return m_bPause;
 }
 
 void CVideoPlayer::Stop()
@@ -139,6 +149,11 @@ void CVideoPlayer::ClearFrame()
 	m_bStopRender = false;
 	DecodeThread();
 	RenderThread();
+}
+
+void CVideoPlayer::Clear()
+{
+
 }
 
 void CVideoPlayer::PushPacket(PacketPtr && packet_ptr)
@@ -269,6 +284,23 @@ void CVideoPlayer::DecodeThread()
 			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
 			if (m_pDecoder->DecodeFrame(pFrame.get(), m_queuePacket) >= 0)
 			{
+				{
+					static double temp_pts = 0.0;
+					static double diff_count = 0.0;
+					static double diff_average = 0.0;
+					static int64_t frame_count = 0;
+					frame_count++;
+					double pts = (pFrame->best_effort_timestamp - m_pStream->start_time) * av_q2d(m_pStream->time_base);
+					double diff = pts - temp_pts;
+					if (diff_average != 0.0 && std::fabs(diff - diff_average* 1000) > 10.0f)
+						pFrame->pts = (double)diff_average * 1000 / av_q2d(m_pStream->time_base);
+					av_log(NULL, AV_LOG_INFO, "frame pts: %d", pFrame->pts);
+					//av_log(NULL, AV_LOG_INFO, "diff: %f", diff);
+					temp_pts = pts;
+					diff_count += diff;
+					diff_average = diff_count / double(frame_count);
+					//av_log(NULL, AV_LOG_INFO, "pts:%d, diff:%f, frame pts:%d", pts, diff_average, pFrame->pts/1000);
+				}
 				m_queueFrame.Push(std::move(pFrame));
 			}
 		}
@@ -302,9 +334,6 @@ void CVideoPlayer::RenderThread()
 
 				video_pts *= av_q2d(m_pStream->time_base);
 				video_pts = SyncVideo(pFrame.get(), video_pts);
-
-				double pts = (pFrame->best_effort_timestamp - m_pStream->start_time) * av_q2d(m_pStream->time_base);
-				av_log(NULL, AV_LOG_INFO, "frame pts:%f, video pts:%f", pts, video_pts);
 
 				if (m_pClockMgr->GetAudioClock() > 0)
 				{
@@ -376,7 +405,7 @@ float CVideoPlayer::SmoothVideo(AVFrame * frame, int size)
 	int64_t duration = frame->pkt_duration;
 	if (duration <= 0 || duration >= 100)
 	{
-		int frame_rate = m_pStream->avg_frame_rate.num / m_pStream->avg_frame_rate.den;//每秒多少帧  
+		int frame_rate = m_pStream->avg_frame_rate.den == 0 ? 0 : m_pStream->avg_frame_rate.num / m_pStream->avg_frame_rate.den;//每秒多少帧  
 		if (frame_rate > 0)
 			duration = 1000 / frame_rate;
 		else

@@ -3,10 +3,8 @@
 #include "DecoderFactory.h"
 #include <functional>
 
-CAudioPlayer::CAudioPlayer(AVStream* pStream, ISound *pSound)
-	:m_pStream(pStream)
-	,m_pSound(pSound)
-	,m_queuePacket(MAX_AUDIO_SIZE)
+CAudioPlayer::CAudioPlayer()
+	:m_queuePacket(MAX_AUDIO_SIZE)
 {
 	m_pDecoder = CDecoderFactory::getSingleModule().CreateDecoder();
 }
@@ -16,12 +14,22 @@ CAudioPlayer::~CAudioPlayer()
 	CDecoderFactory::getSingleModule().ReleaseDecoder(&m_pDecoder);
 }
 
+void CAudioPlayer::SetStream(AVStream * pStream)
+{
+	m_pStream = pStream;
+}
+
+void CAudioPlayer::SetSound(ISound * pSound)
+{
+	m_pSound = pSound;
+}
+
 void CAudioPlayer::SetClockMgr(CClockMgr * clockMgr)
 {
 	m_pClockMgr = clockMgr;
 }
 
-bool CAudioPlayer::Open(PLAYER_OPTS &opts)
+bool CAudioPlayer::Open()
 {
 	if (m_bOpen)
 		return false;
@@ -38,7 +46,6 @@ bool CAudioPlayer::Open(PLAYER_OPTS &opts)
 	m_queuePacket.Init();
 
 	m_bOpen = true;
-	m_opts = opts;
 	return true;
 }
 

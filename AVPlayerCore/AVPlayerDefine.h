@@ -2,7 +2,26 @@
 #include <Windows.h>
 #include <string>
 #include <functional>
+#include <algorithm>
+#include <future>
+
+
 using namespace std;
+
+typedef void(*callback_event)(const struct event_st *pevent, void *p_data);
+
+enum PLAY_EVENT
+{
+	PlayerOpening,
+	PlayerBuffering,
+	PlayerPlaying,
+	PlayerPaused,
+	PlayerStopped,
+	PlayerForward,
+	PlayerBackward,
+	PlayerPositionChanged,
+	PlayerClosed,
+};
 
 enum VIDEO_TYPE
 {

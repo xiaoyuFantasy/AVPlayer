@@ -13,12 +13,14 @@
 class CAudioPlayer
 {
 public:
-	CAudioPlayer(AVStream* pStream, ISound *pSound);
+	CAudioPlayer();
 	virtual ~CAudioPlayer();
 
 public:
-	void SetClockMgr(CClockMgr* clockMgr = nullptr);
-	bool Open(PLAYER_OPTS &opts);
+	void SetStream(AVStream *pStream);
+	void SetSound(ISound* pSound);
+	void SetClockMgr(CClockMgr* clockMgr);
+	bool Open();
 	void Close();
 	double GetClock();
 	void PushPacket(PacketPtr && packet_ptr);
@@ -29,7 +31,6 @@ protected:
 	int funcDecodeFrame(uint8_t** buffer);
 
 private:
-	PLAYER_OPTS			m_opts;
 	AVStream*			m_pStream = nullptr;
 	AVCodecContext*		m_pCodecCtx = nullptr;
 	std::atomic_bool	m_bOpen = false;

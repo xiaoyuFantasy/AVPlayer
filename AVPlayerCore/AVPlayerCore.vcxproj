@@ -163,6 +163,7 @@
     <ClInclude Include="AVPlayerDll.h" />
     <ClInclude Include="Lock.h" />
     <ClInclude Include="PlayerDefine.h" />
+    <ClInclude Include="PlayerImpl.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="RenderDefine.h" />
     <ClInclude Include="RenderFactory.h" />
@@ -199,6 +200,7 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="GlRender.cpp" />
+    <ClCompile Include="PlayerImpl.cpp" />
     <ClCompile Include="RenderFactory.cpp" />
     <ClCompile Include="SDLRender.cpp" />
     <ClCompile Include="SDLSound.cpp" />

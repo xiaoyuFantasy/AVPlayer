@@ -10,11 +10,13 @@
 class CVideoPlayer
 {
 public:
-	CVideoPlayer(AVStream* pStream, IRender* render);
+	CVideoPlayer();
 	virtual ~CVideoPlayer();
 
 public:
-	void SetClockMgr(CClockMgr* clockMgr = nullptr);
+	void SetRender(IRender* render);
+	void SetStream(AVStream* pStream);
+	void SetClockMgr(CClockMgr* clockMgr);
 	bool Open(PLAYER_OPTS &opts);
 	void Play();
 	bool IsPlaying();
@@ -23,6 +25,7 @@ public:
 	void Stop();
 	double GetClock();
 	void ClearFrame();
+	void Clear();
 
 public:
 	void PushPacket(PacketPtr && packet_ptr);
@@ -42,10 +45,15 @@ private:
 	std::atomic_int		m_nWndWidth;
 	std::atomic_int		m_nWndHeight;
 	double				m_dVideoProportion;
+	std::atomic_bool	m_bClear = false;
+	std::mutex			m_mxClearWait;
+	std::condition_variable		m_cvClear;
 	std::atomic_bool	m_bQuit = false;
 	std::atomic_bool	m_bOpen = false;
 	std::atomic_bool	m_bPlaying = false;
-	std::atomic_bool	m_bPaused = false;
+	std::atomic_bool	m_bPause = false;
+	std::mutex			m_mxPauseWait;
+	std::condition_variable		m_cvPause;
 	std::atomic_bool	m_bStopDecode = false;
 	std::atomic_bool	m_bStopRender = false;
 	PacketQueue			m_queuePacket;

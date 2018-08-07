@@ -38,12 +38,13 @@ bool CAVPlayerCore::Play()
 	AVIOInterruptCB cb = { interrupt_callback , this };
 	m_pFormatCtx->interrupt_callback = cb;
 	m_pFormatCtx->flush_packets = 1;
+	m_pFormatCtx->max_analyze_duration = 1 * AV_TIME_BASE;
 	int nIndex = 0;
 	int nMaxCount = 10;
 	int ret = 0;
 	for (nIndex = 0; nIndex < nMaxCount; nIndex++)
 	{
-		m_pFormatCtx->probesize = 10 * 1024 * (nIndex + 1);
+		m_pFormatCtx->probesize = 1 * 1024 * (nIndex + 1);
 		ret = avformat_open_input(&m_pFormatCtx, m_opts.strPath.c_str(), nullptr, nullptr);
 		if (ret != AVERROR_BUFFER_TOO_SMALL)
 			break;
