@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "PlayerImpl.h"
-
+#include "SoundFactory.h"
+#include "RenderFactory.h"
 
 CPlayerImpl::CPlayerImpl()
 {
@@ -13,8 +14,11 @@ CPlayerImpl::~CPlayerImpl()
 
 bool CPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync = true)
 {
-	bool bOpen = false;
+	if (m_bOpened || m_bOpening)
+		return false;
 
+	m_bOpening = true;
+	bool bOpen = false;
 	std::packaged_task<bool()> task([&]() {
 		if (m_pFormatCtx)
 			avformat_free_context(m_pFormatCtx);
@@ -58,6 +62,8 @@ bool CPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync = true)
 
 		if (m_nAudioIndex != -1 && m_opts.bEnableAudio)
 		{
+			if (!m_pSound)
+				m_pSound = CSoundFactory::getSingleModule().CreateSound();
 			m_audioPlayer.SetSound(m_pSound);
 			m_audioPlayer.SetStream(m_pFormatCtx->streams[m_nAudioIndex]);
 			m_audioPlayer.SetClockMgr(&m_clockMgr);
@@ -67,6 +73,8 @@ bool CPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync = true)
 
 		if (m_nVideoIndex != -1 && m_opts.bEnableVideo)
 		{
+			if (!m_pRender)
+				m_pRender = CRenderFactory::getSingleModule().CreateRender();
 			m_videoPlayer.SetRender(m_pRender);
 			m_videoPlayer.SetStream(m_pFormatCtx->streams[m_nVideoIndex]);
 			m_videoPlayer.SetClockMgr(&m_clockMgr);
@@ -103,6 +111,10 @@ bool CPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync = true)
 			hours = mins / 60;
 			mins %= 60;
 		}
+		m_bOpened = true;
+		m_bOpening = false;
+		m_statusPlayer = OpenedStatus;
+		return true;
 
 	OPEN_ERROR:
 		avformat_close_input(&m_pFormatCtx);
@@ -116,7 +128,7 @@ bool CPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync = true)
 		ret = task.get_future();
 
 	std::thread(std::move(task)).detach();
-	if (bSync)
+	if (bSync && ret.valid())
 		bOpen = ret.get();
 
 	return bOpen;
@@ -124,8 +136,13 @@ bool CPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync = true)
 
 bool CPlayerImpl::Play()
 {
+	if (m_bPlaying)
+		return false;
+
+	m_bPlaying = true;
+	m_statusPlayer = PlayingStatus;
 	m_threadPlay = std::thread([&]() {
-		while (!m_bClose)
+		while (!m_bStop)
 		{
 			if (m_bPause)
 			{
@@ -142,10 +159,10 @@ bool CPlayerImpl::Play()
 				else
 				{
 					if (m_bAudioOpen)
-						m_pAudioPlayer->ClearFrame();
+						m_audioPlayer.Reset();
 
 					if (m_bVideoOpen)
-						m_pVideoPlayer->ClearFrame();
+						m_videoPlayer.Reset();
 				}
 				av_log(NULL, AV_LOG_INFO, "avformat_seek_file");
 				m_bSeek = false;
@@ -163,16 +180,17 @@ bool CPlayerImpl::Play()
 				continue;
 			}
 
-			if (m_bClose)
+			if (m_bStop)
 				break;
 
 			if (m_bAudioOpen && packet->stream_index == m_nAudioIndex)
-				m_pAudioPlayer->PushPacket(move(packet));
+				m_audioPlayer.PushPacket(move(packet));
 			else if (m_bVideoOpen && packet->stream_index == m_nVideoIndex)
-				m_pVideoPlayer->PushPacket(move(packet));
+				m_videoPlayer.PushPacket(move(packet));
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
+		m_bPlaying = false;
 	});
 	return false;
 }
@@ -180,39 +198,62 @@ bool CPlayerImpl::Play()
 void CPlayerImpl::Pause()
 {
 	m_bPause = true;
+	m_statusPlayer = PausedStatus;
 }
 
 void CPlayerImpl::Resume()
 {
 	m_bPause = false;
 	m_cvPause.notify_all();
+	m_statusPlayer = PlayingStatus;
 }
 
-bool CPlayerImpl::Stop()
+void CPlayerImpl::Stop()
 {
-	return false;
+	Close();
 }
 
 bool CPlayerImpl::WaitForCompletion()
 {
-	return false;
+	while (m_statusPlayer != CloseStatus)
+		av_usleep(10000);
+
+	return true;
 }
 
-bool CPlayerImpl::Close()
+void CPlayerImpl::Close()
 {
-	return false;
+	m_bStop = true;
+	m_cvPause.notify_all();
+	if (m_threadPlay.joinable())
+		m_threadPlay.join();
+
+	m_audioPlayer.Close();
+	m_videoPlayer.Stop();
+
+	CSoundFactory::getSingleModule().ReleaseSound(&m_pSound);
+	CRenderFactory::getSingleModule().ReleaseRender(&m_pRender);
+
+	avformat_close_input(&m_pFormatCtx);
+	if (m_pFormatCtx)
+		avformat_free_context(m_pFormatCtx);
 }
 
 void CPlayerImpl::SeekTo(double fact)
 {
+	m_nPos = fact;
+	m_bSeek = true;
 }
 
 void CPlayerImpl::Volume(int nVolume)
 {
+	if (m_bAudioOpen && m_pSound)
+		m_pSound->SetVolume(nVolume);
 }
 
 void CPlayerImpl::Mute(bool s)
 {
+	
 }
 
 void CPlayerImpl::FullScreen(bool bfull)
@@ -242,7 +283,7 @@ double CPlayerImpl::Buffering()
 int CPlayerImpl::interrupt_callback(void * lparam)
 {
 	CPlayerImpl *p = (CPlayerImpl*)lparam;
-	if (p->m_bClose)
+	if (p->m_bStop)
 		return 1;
 	return 0;
 }

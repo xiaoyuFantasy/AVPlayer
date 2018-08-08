@@ -35,13 +35,17 @@ bool CAudioPlayer::Open()
 		return false;
 
 	if (!CreateDecoder())
+	{
+		av_log(NULL, AV_LOG_ERROR, "Audio Player Create Decoder Failed!!!");
 		return false;
-	av_log(NULL, AV_LOG_INFO, "Audio Player Create Decoder Success");
+	}
+
+	av_log(NULL, AV_LOG_INFO, "Audio Player Create Decoder");
 	bool bRet = m_pSound->OpenAudio(m_pCodecCtx->sample_rate, m_pCodecCtx->channels, m_pCodecCtx->channel_layout);
 	if (!bRet)
 		return false;
 	m_pSound->SetCallback(std::bind(&CAudioPlayer::funcDecodeFrame, this, std::placeholders::_1));
-	av_log(NULL, AV_LOG_INFO, "Audio Player Open Audio Device Success");
+	av_log(NULL, AV_LOG_INFO, "Audio Player Open Audio Device");
 
 	m_queuePacket.Init();
 
@@ -51,12 +55,13 @@ bool CAudioPlayer::Open()
 
 void CAudioPlayer::Close()
 {
-	m_queuePacket.Quit();
-	if (m_pCodecCtx)
-		avcodec_free_context(&m_pCodecCtx);
+	m_pSound->CloseAudio();
 
 	if (m_pSwrCtx)
 		swr_free(&m_pSwrCtx);
+	m_queuePacket.Quit();
+	if (m_pCodecCtx)
+		avcodec_free_context(&m_pCodecCtx);
 }
 
 double CAudioPlayer::GetClock()
@@ -76,6 +81,10 @@ void CAudioPlayer::ClearFrame()
 	m_queuePacket.Init();
 	m_clock = 0.0;
 	m_pts = 0.0;
+}
+
+void CAudioPlayer::Reset()
+{
 }
 
 bool CAudioPlayer::CreateDecoder()

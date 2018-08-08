@@ -23,6 +23,18 @@ enum PLAY_EVENT
 	PlayerClosed,
 };
 
+enum PLAY_STATUS
+{
+	NoneStatus,
+	OpenedStatus, 
+	PlayingStatus, 
+	PausedStatus,
+	CompletedStatus, 
+	StopedStatus,
+	CloseStatus,
+};
+
+
 enum VIDEO_TYPE
 {
 	NORMAL_TYPE,

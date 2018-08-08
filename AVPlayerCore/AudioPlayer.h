@@ -25,6 +25,7 @@ public:
 	double GetClock();
 	void PushPacket(PacketPtr && packet_ptr);
 	void ClearFrame();
+	void Reset();
 
 protected:
 	bool CreateDecoder();

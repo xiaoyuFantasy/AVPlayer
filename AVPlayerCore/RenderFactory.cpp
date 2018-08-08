@@ -22,6 +22,7 @@ void CRenderFactory::ReleaseRender(IRender ** render)
 {
 	if (*render)
 	{
+		(*render)->DestoryRender();
 		delete *render;
 		*render = nullptr;
 	}

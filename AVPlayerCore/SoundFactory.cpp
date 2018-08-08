@@ -20,6 +20,7 @@ void CSoundFactory::ReleaseSound(ISound ** sound)
 {
 	if (*sound)
 	{
+		(*sound)->CloseAudio();
 		delete *sound;
 		*sound = nullptr;
 	}

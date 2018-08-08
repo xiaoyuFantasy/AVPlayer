@@ -151,7 +151,7 @@ void CVideoPlayer::ClearFrame()
 	RenderThread();
 }
 
-void CVideoPlayer::Clear()
+void CVideoPlayer::Reset()
 {
 
 }
@@ -276,7 +276,7 @@ void CVideoPlayer::DecodeThread()
 
 		while (!m_bStopDecode && !m_bQuit)
 		{
-			if (m_bPaused)
+			if (m_bPause)
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				continue;
@@ -315,7 +315,7 @@ void CVideoPlayer::RenderThread()
 		av_log(NULL, AV_LOG_INFO, "Video Render Thread");
 		while (!m_bStopRender && !m_bQuit)
 		{
-			if (m_bPaused)
+			if (m_bPause)
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				continue;
@@ -337,8 +337,8 @@ void CVideoPlayer::RenderThread()
 
 				if (m_pClockMgr->GetAudioClock() > 0)
 				{
-					double audio_pts;// = m_pClockMgr->GetAudioClock(); //ÒôÆµpts
-					while (!m_bStopRender && !m_bPaused && !m_bQuit)
+					double audio_pts;//ÒôÆµpts
+					while (!m_bStopRender && !m_bPause && !m_bQuit)
 					{
 						audio_pts = m_pClockMgr->GetAudioClock();
 						//av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
@@ -356,7 +356,7 @@ void CVideoPlayer::RenderThread()
 					::Sleep(delay);
 				}
 
-				if (m_bPaused)
+				if (m_bPause)
 				{
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 					continue;

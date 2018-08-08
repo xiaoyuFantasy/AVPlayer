@@ -23,13 +23,13 @@ public:
 	void Resume();
 
 	// 停止播放.
-	bool Stop();
+	void Stop();
 
 	// 等待播放直到完成.
 	bool WaitForCompletion();
 
 	// 关闭媒体
-	bool Close();
+	void Close();
 
 	// seek到某个时间播放, 按视频时长的百分比.
 	void SeekTo(double fact);
@@ -62,13 +62,18 @@ private:
 	PLAYER_OPTS		m_opts;
 	AVFormatContext*	m_pFormatCtx = nullptr;
 	int64_t				m_duration = 0;
+	std::atomic<PLAY_STATUS> m_statusPlayer;
 	std::thread			m_threadPlay;
-	std::atomic_bool	m_bClose = false;
+	std::atomic_bool	m_bOpened = false;
+	std::atomic_bool	m_bOpening = false;
+	std::atomic_bool	m_bPlaying = false;
+	std::atomic_bool	m_bStop = false;
 	std::atomic_bool	m_bPause = false;
 	std::mutex			m_mxPauseWait;
 	std::condition_variable		m_cvPause;
 	std::atomic_bool	m_bSeek = false;
 	std::atomic<double>	m_nPos = 0.0;
+	
 
 	int					m_nVideoIndex = -1;
 	int					m_nAudioIndex = -1;

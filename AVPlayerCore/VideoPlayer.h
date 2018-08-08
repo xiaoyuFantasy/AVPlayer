@@ -25,7 +25,7 @@ public:
 	void Stop();
 	double GetClock();
 	void ClearFrame();
-	void Clear();
+	void Reset();
 
 public:
 	void PushPacket(PacketPtr && packet_ptr);
