@@ -39,8 +39,9 @@ bool CAudioPlayer::Open()
 		av_log(NULL, AV_LOG_ERROR, "Audio Player Create Decoder Failed!!!");
 		return false;
 	}
-
 	av_log(NULL, AV_LOG_INFO, "Audio Player Create Decoder");
+
+	m_pDecoder->Init(m_pCodecCtx);
 	bool bRet = m_pSound->OpenAudio(m_pCodecCtx->sample_rate, m_pCodecCtx->channels, m_pCodecCtx->channel_layout);
 	if (!bRet)
 		return false;
@@ -120,7 +121,6 @@ bool CAudioPlayer::CreateDecoder()
 		return false;
 	}
 
-	m_pDecoder->Init(m_pCodecCtx);
 	return true;
 }
 

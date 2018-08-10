@@ -12,7 +12,7 @@ class IRender
 {
 public:
 	virtual bool InitRender() = 0;
-	virtual bool CreateRender(HWND hWnd, int nWidth, int nHeight) = 0;
+	virtual bool CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelFormat = 0) = 0;
 	virtual void DestoryRender() = 0;
 	virtual bool SetRenderMode(RENDER_MODE) = 0;
 	virtual void SetRenderSize(int, int) = 0;

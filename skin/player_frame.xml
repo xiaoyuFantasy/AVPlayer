@@ -37,7 +37,7 @@
             </HorizontalLayout>
         </HorizontalLayout>
         <VerticalLayout bkcolor="0xFF000000">
-            <PlayerWindow name="video_player" visible="false" />
+            <PlayerWindow name="video_player" />
         </VerticalLayout>
         <VerticalLayout bkcolor="#FF070707" height="20">
             <Slider name="sliderPlay" padding="10,0,10,0" enabled="false" height="20" bkimage="image\slider\SliderBack.png" foreimage="image\slider\SliderFore.png" min="0" max="1000" value="0" hor="true"  thumbhotimage="file='image\slider\SliderBar.png' source='21,0,41,20'" thumbpushedimage="file='image\slider\SliderBar.png' source='42,0,62,20'" thumbsize="20,20" />

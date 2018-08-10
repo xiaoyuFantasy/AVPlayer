@@ -39,9 +39,6 @@
     <ClInclude Include="UIWnd.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="VideoUI.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="VideoWnd.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -57,9 +54,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="AVPlayerWnd.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="VideoUI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="VideoWnd.cpp">

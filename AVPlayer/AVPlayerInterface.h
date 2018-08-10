@@ -3,46 +3,39 @@
 #include <string>
 #include "../AVPlayerCore/AVPlayerDefine.h"
 
-//enum VIDEO_TYPE
-//{
-//	NORMAL_TYPE,
-//	PANORAMIC_TYPE,
-//};
-//
-//typedef void(*DurationCallback)(void *userdata, int64_t duration);
-//typedef void(*ProgressCallback)(void *userdata, int64_t progress);
-//typedef void(*VideoCallback)(void *userdata, int width, int height);
-//typedef void(*ErrorCallback)(void *userdata, int err, std::string strMsg);
-//
-//typedef struct _PLAYER_OPTS
-//{
-//	void*		user_data = nullptr;
-//	string		strPath;
-//	HWND		hWnd = nullptr;
-//	bool		bEnableVideo = true;
-//	bool		bEnableAudio = true;
-//	VIDEO_TYPE	video_type = NORMAL_TYPE;
-//	HINSTANCE	hInstance;
-//	DurationCallback durationCb = nullptr;
-//	ProgressCallback progreeeCb = nullptr;
-//	VideoCallback	videoCb = nullptr;
-//	ErrorCallback errorCb = nullptr;
-//} PLAYER_OPTS;
-
 typedef void(*funcInit)();
 typedef void(*funcUnInit)();
 typedef HANDLE(*funcCreatePlayer)();
 typedef void(*funcDestoryPlayer)(HANDLE handle);
-typedef bool(*funcSetOptions)(HANDLE handle, PLAYER_OPTS &opts);
-typedef bool(*funcPlay)(HANDLE handle, PLAYER_OPTS &opts);
+// 打开一个媒体文件
+typedef bool(*funcOpen)(HANDLE handle, PLAYER_OPTS &opts, bool bSync);
+// 开始播放视频.
+typedef bool(*funcPlay)(HANDLE handle);
+// 暂停播放.
+typedef void(*funcPause)(HANDLE handle);
+// 继续播放.
+typedef void(*funcResume)(HANDLE handle);
+// 停止播放.
 typedef void(*funcStop)(HANDLE handle);
-typedef bool(*funcIsPlaying)(HANDLE handle);
-typedef void(*funcPause)(HANDLE handle, bool bPause);
-typedef bool(*funcIsPaused)(HANDLE handle);
-typedef bool(*funcSeek)(HANDLE handle, int nPos);
-typedef void(*funcSetVolume)(HANDLE handle, int nVolume);
-typedef void(*funcSetMuted)(HANDLE handle, bool bMuted);
-typedef void(*funcSetWindowSize)(HANDLE handle, int nWidth, int nHeight);
-typedef void(*funcSetPanoScale)(HANDLE handle, float factor);
-typedef void(*funcSetPanoRotate)(HANDLE handle, float x, float y);
-typedef void(*funcSetPanoScroll)(HANDLE handle, float latitude, float longitude);
+// 播放状态
+typedef PLAY_STATUS (*funcStatus)(HANDLE handle);
+// 等待播放直到完成.
+typedef bool(*funcWaitForCompletion)(HANDLE handle);
+// 关闭媒体
+typedef void(*funcClose)(HANDLE handle);
+// seek到某个时间播放, 按视频时长的百分比.
+typedef void(*funcSeekTo)(HANDLE handle, double fact);
+// 设置声音音量大小.
+typedef void(*funcVolume)(HANDLE handle, int nVolume);
+// 静音设置.
+typedef void(*funcMute)(HANDLE handle, bool s);
+// 全屏切换.
+typedef void(*funcFullScreen)(HANDLE handle, bool bfull);
+// 返回当前播放时间.
+typedef double(*funcCurrentPlayTime)(HANDLE handle);
+// 当前播放视频的时长, 单位秒.
+typedef double(*funcDuration)(HANDLE handle);
+// 当前播放视频的宽高, 单位像素.
+typedef void(*funcVideoSize)(HANDLE handle, int width, int height);
+// 当前缓冲进度, 单位百分比.
+typedef double(*funcBuffering)(HANDLE handle);

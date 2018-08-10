@@ -4,11 +4,7 @@
 #include <functional>
 #include <algorithm>
 #include <future>
-
-
 using namespace std;
-
-typedef void(*callback_event)(const struct event_st *pevent, void *p_data);
 
 enum PLAY_EVENT
 {
@@ -34,17 +30,13 @@ enum PLAY_STATUS
 	CloseStatus,
 };
 
-
 enum VIDEO_TYPE
 {
 	NORMAL_TYPE,
 	PANORAMIC_TYPE,
 };
 
-typedef void(*DurationCallback)(void *userdata, int64_t duration);
-typedef void(*ProgressCallback)(void *userdata, int64_t progress);
-typedef void(*VideoCallback)(void *userdata, int width, int height);
-typedef void(*ErrorCallback)(void *userdata, int err, std::string strMsg);
+typedef void(*FuncPlayerEvent)(const PLAY_EVENT e, void *data);
 
 typedef struct _PLAYER_OPTS
 {
@@ -54,9 +46,5 @@ typedef struct _PLAYER_OPTS
 	bool		bEnableVideo = true;
 	bool		bEnableAudio = true;
 	VIDEO_TYPE	video_type = NORMAL_TYPE;
-	HINSTANCE	hInstance;
-	DurationCallback durationCb = nullptr;
-	ProgressCallback progreeeCb = nullptr;
-	VideoCallback	videoCb = nullptr;
-	ErrorCallback errorCb = nullptr;
+	FuncPlayerEvent	funcEvent = nullptr;
 } PLAYER_OPTS;

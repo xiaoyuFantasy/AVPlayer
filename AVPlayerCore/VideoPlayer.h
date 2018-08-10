@@ -5,7 +5,7 @@
 #include "AVPlayerDefine.h"
 #include "ClockMgr.h"
 
-#define MAX_VIDEO_SIZE (1024) //25 * 256 * 1024
+#define MAX_VIDEO_SIZE (256) //25 * 256 * 1024
 
 class CVideoPlayer
 {
@@ -70,8 +70,8 @@ private:
 	IDecoder*			m_pDecoder = nullptr;
 	CClockMgr*			m_pClockMgr = nullptr;
 	//×ª»»
-	SwsContext*			m_pSwsCtx = nullptr;
+	/*SwsContext*			m_pSwsCtx = nullptr;
 	uint8_t*			m_pVideoBuffer = nullptr;
-	AVFrame*			m_pFrameOut = nullptr;
+	AVFrame*			m_pFrameOut = nullptr;*/
 };
 

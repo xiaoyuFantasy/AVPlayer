@@ -17,13 +17,16 @@ bool CSDLRender::InitRender()
 	return true;
 }
 
-bool CSDLRender::CreateRender(HWND hWnd, int nWidth, int nHeight)
+bool CSDLRender::CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelFormat)
 {
 	if (!::IsWindow(hWnd))
 		return false;
 
 	if (m_pWindow)
 		return false;
+
+	m_nVideoWidth = nWidth;
+	m_nVideoHeight = nHeight;
 
 	RECT rc;
 	::GetWindowRect(hWnd, &rc);
@@ -42,12 +45,64 @@ bool CSDLRender::CreateRender(HWND hWnd, int nWidth, int nHeight)
 		return false;
 	}
 
-	m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STATIC, nWidth, nHeight);
+	m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STATIC, m_nVideoWidth, m_nVideoHeight);
+
+	if (m_pFrameOut)
+		av_frame_free(&m_pFrameOut);
+	m_pFrameOut = av_frame_alloc();
+	m_pFrameOut->format = AV_PIX_FMT_YUV420P;
+	m_pFrameOut->width = m_nVideoWidth;
+	m_pFrameOut->height = m_nVideoHeight;
+	m_pSwsCtx = sws_getContext(
+		m_nVideoWidth,
+		m_nVideoHeight,
+		(AVPixelFormat)pixelFormat,
+		m_pFrameOut->width,
+		m_pFrameOut->height,
+		(AVPixelFormat)m_pFrameOut->format,
+		SWS_BILINEAR,
+		nullptr,
+		nullptr,
+		nullptr);
+
+	if (!m_pSwsCtx)
+	{
+		av_log(NULL, AV_LOG_ERROR, "sws_getContext failed.");
+		DestoryRender();
+		return false;
+	}
+
+	int nSize = av_image_get_buffer_size(
+		(AVPixelFormat)m_pFrameOut->format,
+		m_pFrameOut->width,
+		m_pFrameOut->height,
+		1);
+
+	if (m_pVideoBuffer)
+		av_free(m_pVideoBuffer);
+	m_pVideoBuffer = (uint8_t*)av_malloc(nSize * sizeof(uint8_t));
+
+	//设置帧数据对应的内存
+	av_image_fill_arrays(
+		m_pFrameOut->data,
+		m_pFrameOut->linesize,
+		m_pVideoBuffer,
+		(AVPixelFormat)m_pFrameOut->format,
+		m_pFrameOut->width,
+		m_pFrameOut->height,
+		1);
+
 	return true;
 }
 
 void CSDLRender::DestoryRender()
 {
+	if (m_pVideoBuffer)
+		av_free(m_pVideoBuffer);
+
+	if (m_pFrameOut)
+		av_frame_free(&m_pFrameOut);
+
 	if (m_pWindow)
 		SDL_DestroyWindow(m_pWindow);
 
@@ -72,8 +127,17 @@ void CSDLRender::SetRenderSize(int width, int height)
 
 void CSDLRender::RenderFrameData(AVFrame *frame)
 {
+	sws_scale(
+		m_pSwsCtx,
+		(uint8_t const * const *)frame->data,
+		frame->linesize, 
+		0, 
+		frame->height, 
+		m_pFrameOut->data,
+		m_pFrameOut->linesize);
+
 	SDL_SetRenderDrawColor(m_pRenderer, 0, 0, 0, 255);
-	SDL_UpdateTexture(m_pTexture, NULL, frame->data[0], frame->linesize[0]);
+	SDL_UpdateTexture(m_pTexture, NULL, m_pFrameOut->data[0], m_pFrameOut->linesize[0]);
 	SDL_RenderClear(m_pRenderer);
 	SDL_RenderCopyEx(m_pRenderer, m_pTexture, nullptr, nullptr, 0, nullptr, SDL_FLIP_NONE);
 	SDL_RenderPresent(m_pRenderer);
@@ -89,7 +153,7 @@ void CSDLRender::RenderFrameData(AVFrame *frame)
 		sdl_rect.w = m_nWndWidth;
 		sdl_rect.h = m_nWndHeight;
 		m_pRenderer = SDL_CreateRenderer(m_pWindow, -1, SDL_RENDERER_ACCELERATED);
-		m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STATIC, frame->width, frame->height);
+		m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STATIC, m_nVideoWidth, m_nVideoHeight);
 		m_bSizeChanged = false;
 	}
 }

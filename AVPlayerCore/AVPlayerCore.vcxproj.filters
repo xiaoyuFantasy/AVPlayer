@@ -13,20 +13,20 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Decoder">
-      <UniqueIdentifier>{f2208d8b-becf-4c29-99a2-e9fd849b1a30}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Render">
-      <UniqueIdentifier>{018ab40f-3255-4ed8-aa73-269e64973535}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound">
-      <UniqueIdentifier>{ecb22e7f-2dc9-4816-9ed5-417f64c047fd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Single">
-      <UniqueIdentifier>{adfb8804-d78c-4711-a67e-f2baa15e6f0d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="player">
       <UniqueIdentifier>{3653eb2d-de69-48bb-9e64-5c829fc8c633}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sound">
+      <UniqueIdentifier>{ecb22e7f-2dc9-4816-9ed5-417f64c047fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="single">
+      <UniqueIdentifier>{adfb8804-d78c-4711-a67e-f2baa15e6f0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render">
+      <UniqueIdentifier>{018ab40f-3255-4ed8-aa73-269e64973535}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="decoder">
+      <UniqueIdentifier>{f2208d8b-becf-4c29-99a2-e9fd849b1a30}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -37,9 +37,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="AVPlayerCore.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="VideoPlayer.h">
@@ -63,60 +60,51 @@
     <ClInclude Include="AVPlayerDefine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="AVPlayerDll.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="AVPlayer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="PlayerDefine.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="DecoderFactory.h">
-      <Filter>Decoder</Filter>
+      <Filter>decoder</Filter>
     </ClInclude>
     <ClInclude Include="FFmpegDecoder.h">
-      <Filter>Decoder</Filter>
+      <Filter>decoder</Filter>
     </ClInclude>
     <ClInclude Include="DecoderDefine.h">
-      <Filter>Decoder</Filter>
+      <Filter>decoder</Filter>
     </ClInclude>
     <ClInclude Include="SoundDefine.h">
-      <Filter>Sound</Filter>
+      <Filter>sound</Filter>
     </ClInclude>
     <ClInclude Include="SDLSound.h">
-      <Filter>Sound</Filter>
+      <Filter>sound</Filter>
     </ClInclude>
     <ClInclude Include="SoundFactory.h">
-      <Filter>Sound</Filter>
+      <Filter>sound</Filter>
     </ClInclude>
     <ClInclude Include="RenderDefine.h">
-      <Filter>Render</Filter>
+      <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="GlRender.h">
-      <Filter>Render</Filter>
+      <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="SDLRender.h">
-      <Filter>Render</Filter>
+      <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="RenderFactory.h">
-      <Filter>Render</Filter>
+      <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="SingleModule.h">
-      <Filter>Single</Filter>
+      <Filter>single</Filter>
     </ClInclude>
     <ClInclude Include="ClockMgr.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="PlayerImpl.h">
+    <ClInclude Include="AVPlayerImpl.h">
       <Filter>player</Filter>
+    </ClInclude>
+    <ClInclude Include="AVPlayer.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="AVPlayerCore.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="dllmain.cpp">
@@ -128,38 +116,35 @@
     <ClCompile Include="AudioPlayer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="AVPlayerDll.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="AVPlayer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="FFmpegDecoder.cpp">
-      <Filter>Decoder</Filter>
+      <Filter>decoder</Filter>
     </ClCompile>
     <ClCompile Include="DecoderFactory.cpp">
-      <Filter>Decoder</Filter>
+      <Filter>decoder</Filter>
     </ClCompile>
     <ClCompile Include="SDLSound.cpp">
-      <Filter>Sound</Filter>
+      <Filter>sound</Filter>
     </ClCompile>
     <ClCompile Include="SoundFactory.cpp">
-      <Filter>Sound</Filter>
+      <Filter>sound</Filter>
     </ClCompile>
     <ClCompile Include="GlRender.cpp">
-      <Filter>Render</Filter>
+      <Filter>render</Filter>
     </ClCompile>
     <ClCompile Include="SDLRender.cpp">
-      <Filter>Render</Filter>
+      <Filter>render</Filter>
     </ClCompile>
     <ClCompile Include="RenderFactory.cpp">
-      <Filter>Render</Filter>
+      <Filter>render</Filter>
     </ClCompile>
     <ClCompile Include="ClockMgr.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="PlayerImpl.cpp">
+    <ClCompile Include="AVPlayerImpl.cpp">
       <Filter>player</Filter>
+    </ClCompile>
+    <ClCompile Include="AVPlayer.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

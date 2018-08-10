@@ -1,124 +1,163 @@
 #include "stdafx.h"
 #include "AVPlayer.h"
+#include "AVPlayerImpl.h"
 
+std::mutex mutexLog;
+static HANDLE g_hCMD = nullptr;
 
-CAVPlayer::CAVPlayer()
+void log_callback(void *p, int level, const char *format, va_list args)
 {
-}
-
-
-CAVPlayer::~CAVPlayer()
-{
-}
-
-void CAVPlayer::Play(PLAYER_OPTS opts)
-{
-	av_log(NULL, AV_LOG_INFO, "AVPlayer");
-	av_log(NULL, AV_LOG_INFO, "Path: %s", opts.strPath.c_str());
-	
-	std::thread([](PLAYER_OPTS opts, CAVPlayerCore **lpPlayerCore) {
-		CAVPlayerCore* pCore = new CAVPlayerCore(opts);
-		*lpPlayerCore = pCore;
-		if (pCore)
-		{
-			pCore->Play();
-			delete pCore;
-			pCore = nullptr;
-		}
-	}, opts, &m_pPlayerCore).detach();
-}
-
-void CAVPlayer::Stop()
-{
-	if (m_pPlayerCore)
+	if (level == AV_LOG_ERROR || level == AV_LOG_INFO || level == AV_LOG_C(134))
 	{
-		m_pPlayerCore->Stop();
-		m_pPlayerCore = nullptr;
+		mutexLog.lock();
+		char szMessageBuffer[256] = { 0 };
+		_vsnprintf(szMessageBuffer, 255, format, args);
+		strcat(szMessageBuffer, "\n");
+		if (g_hCMD)
+		{
+			DWORD num = 0;
+			WriteConsoleA(g_hCMD, szMessageBuffer, strlen(szMessageBuffer), &num, NULL);
+		}
+		else
+			OutputDebugStringA(szMessageBuffer);
+		mutexLog.unlock();
 	}
 }
 
-bool CAVPlayer::IsPlaying() const
+EXPORT_API void  OpenConsole(bool bOpen)
 {
-	if (m_pPlayerCore)
-		return m_pPlayerCore->IsPlaying();
-
-	return false;
+	if (bOpen)
+	{
+		if (!g_hCMD)
+		{
+			AllocConsole();
+			g_hCMD = GetStdHandle(STD_OUTPUT_HANDLE);
+		}
+	}
+	else
+	{
+		FreeConsole();
+		g_hCMD = nullptr;
+	}
 }
 
-void CAVPlayer::Pause(bool bPause)
+EXPORT_API void InitPlayer()
 {
-	if (m_pPlayerCore)
-		m_pPlayerCore->Pause(bPause);
+#ifdef _DEBUG
+	OpenConsole(true);
+#endif // _DEBUG
+	av_log_set_callback(log_callback);
 }
 
-bool CAVPlayer::IsPaused() const
+EXPORT_API void UnInitPlayer()
 {
-	if (m_pPlayerCore)
-		return m_pPlayerCore->IsPaused();
-
-	return false;
-}
-
-void CAVPlayer::Seek(int nPos)
-{
-	if (m_pPlayerCore)
-		m_pPlayerCore->Seek(nPos);
-}
-
-void CAVPlayer::SetVolume(int nVolume)
-{
-	if (m_pPlayerCore)
-		m_pPlayerCore->SetVolume(nVolume);
-}
-
-int CAVPlayer::GetVolume() const
-{
-	if (m_pPlayerCore)
-		return m_pPlayerCore->GetVolume();
 	
-	return 0;
 }
 
-void CAVPlayer::SetMuted(bool bMuted)
+EXPORT_API HANDLE CreateAVPlayer()
 {
-	if (m_pPlayerCore)
-		m_pPlayerCore->SetMuted(bMuted);
+	CAVPlayerImpl *player = new CAVPlayerImpl();
+	return player;
 }
 
-bool CAVPlayer::IsMuted() const
+EXPORT_API void DestoryAVPlayer(HANDLE handle)
 {
-	if (m_pPlayerCore)
-		return m_pPlayerCore->IsMuted();
-
-	return false;
+	if (handle)
+		delete handle;
 }
 
-void CAVPlayer::SetPanormaicType(PLAY_MODE type)
+EXPORT_API bool Open(HANDLE handle, PLAYER_OPTS & opts, bool bSync)
 {
-	if (m_pPlayerCore)
-		m_pPlayerCore->SetPanormaicType(type);
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	return player->Open(opts);
 }
 
-void CAVPlayer::SetPanoramicScale(float factor)
+EXPORT_API bool Play(HANDLE handle)
 {
-	if (m_pPlayerCore)
-		m_pPlayerCore->SetPanoramicScale(factor);
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	return player->Play();
 }
 
-void CAVPlayer::SetPanoramicRotate(float x, float y)
+EXPORT_API void Pause(HANDLE handle)
 {
-	if (m_pPlayerCore)
-		m_pPlayerCore->SetPanoramicRotate(x, y);
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->Pause();
 }
 
-void CAVPlayer::SetPanoramicScroll(float latitude, float longitude)
+EXPORT_API void Resume(HANDLE handle)
 {
-	if (m_pPlayerCore)
-		m_pPlayerCore->SetPanoramicScroll(latitude, longitude);
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->Resume();
 }
 
-void CAVPlayer::SetWindowSize(int nWidth, int nHeight)
+EXPORT_API void Stop(HANDLE handle)
 {
-	if (m_pPlayerCore)
-		m_pPlayerCore->SetWindowSize(nWidth, nHeight);
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->Stop();
+}
+
+PLAY_STATUS Status(HANDLE handle)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	return player->Status();
+}
+
+EXPORT_API bool WaitForCompletion(HANDLE handle)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	return player->WaitForCompletion();
+}
+
+EXPORT_API void Close(HANDLE handle)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->Close();
+}
+
+EXPORT_API void SeekTo(HANDLE handle, double fact)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->SeekTo(fact);
+}
+
+EXPORT_API void Volume(HANDLE handle, int nVolume)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->Volume(nVolume);
+}
+
+EXPORT_API void Mute(HANDLE handle, bool s)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->Mute(s);
+}
+
+EXPORT_API void FullScreen(HANDLE handle, bool bfull)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->FullScreen(bfull);
+}
+
+EXPORT_API double CurrentPlayTime(HANDLE handle)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	return player->CurrentPlayTime();
+}
+
+EXPORT_API double Duration(HANDLE handle)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	return player->Duration();
+}
+
+EXPORT_API void VideoSize(HANDLE handle, int width, int height)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->VideoSize(width, height);
+}
+
+EXPORT_API double Buffering(HANDLE handle)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	return player->Buffering();
 }

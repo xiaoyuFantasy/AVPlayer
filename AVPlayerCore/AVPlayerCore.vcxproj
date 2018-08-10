@@ -158,12 +158,9 @@
     <ClInclude Include="FFmpegDecoder.h" />
     <ClInclude Include="DecoderFactory.h" />
     <ClInclude Include="GlRender.h" />
-    <ClInclude Include="AVPlayerCore.h" />
     <ClInclude Include="AVPlayerDefine.h" />
-    <ClInclude Include="AVPlayerDll.h" />
     <ClInclude Include="Lock.h" />
-    <ClInclude Include="PlayerDefine.h" />
-    <ClInclude Include="PlayerImpl.h" />
+    <ClInclude Include="AVPlayerImpl.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="RenderDefine.h" />
     <ClInclude Include="RenderFactory.h" />
@@ -180,8 +177,6 @@
   <ItemGroup>
     <ClCompile Include="AudioPlayer.cpp" />
     <ClCompile Include="AVPlayer.cpp" />
-    <ClCompile Include="AVPlayerCore.cpp" />
-    <ClCompile Include="AVPlayerDll.cpp" />
     <ClCompile Include="ClockMgr.cpp" />
     <ClCompile Include="FFmpegDecoder.cpp" />
     <ClCompile Include="DecoderFactory.cpp" />
@@ -200,7 +195,7 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="GlRender.cpp" />
-    <ClCompile Include="PlayerImpl.cpp" />
+    <ClCompile Include="AVPlayerImpl.cpp" />
     <ClCompile Include="RenderFactory.cpp" />
     <ClCompile Include="SDLRender.cpp" />
     <ClCompile Include="SDLSound.cpp" />

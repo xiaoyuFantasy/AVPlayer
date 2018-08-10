@@ -39,21 +39,24 @@ void CVideoWnd::InitWindow()
 		m_funcInit = (funcInit)GetProcAddress(m_hPlayerModule, "InitPlayer");
 		m_funcUnInit = (funcUnInit)GetProcAddress(m_hPlayerModule, "UnInitPlayer");
 
-		m_funcCreatePlayer = (funcCreatePlayer)GetProcAddress(m_hPlayerModule, "CreateMPlayer");
-		m_funcDesotryPlayer = (funcDestoryPlayer)GetProcAddress(m_hPlayerModule, "DestoryMPlayer");
-		m_funcSetOptions = (funcSetOptions)(GetProcAddress)(m_hPlayerModule, "SetOptions");
+		m_funcCreatePlayer = (funcCreatePlayer)GetProcAddress(m_hPlayerModule, "CreateAVPlayer");
+		m_funcDesotryPlayer = (funcDestoryPlayer)GetProcAddress(m_hPlayerModule, "DestoryAVPlayer");
+		m_funcOpen = (funcOpen)GetProcAddress(m_hPlayerModule, "Open");
 		m_funcPlay = (funcPlay)GetProcAddress(m_hPlayerModule, "Play");
-		m_funcStop = (funcStop)GetProcAddress(m_hPlayerModule, "Stop");
-		m_funcIsPlaying = (funcIsPlaying)GetProcAddress(m_hPlayerModule, "IsPlaying");
 		m_funcPause = (funcPause)GetProcAddress(m_hPlayerModule, "Pause");
-		m_funcIsPaused = (funcIsPaused)GetProcAddress(m_hPlayerModule, "IsPaused");
-		m_funcSeek = (funcSeek)GetProcAddress(m_hPlayerModule, "Seek");
-		m_funcSetWindowSize = (funcSetWindowSize)GetProcAddress(m_hPlayerModule, "SetWindowSize");
-		m_funcSetPanoScale = (funcSetPanoScale)GetProcAddress(m_hPlayerModule, "SetPanoScale");
-		m_funcSetPanoRotate = (funcSetPanoRotate)GetProcAddress(m_hPlayerModule, "SetPanoRotate");
-		m_funcSetPanoScroll = (funcSetPanoScroll)GetProcAddress(m_hPlayerModule, "SetPanoScroll");
-		m_funcSetVolume = (funcSetVolume)GetProcAddress(m_hPlayerModule, "SetVolume");
-		m_funcSetMuted = (funcSetMuted)GetProcAddress(m_hPlayerModule, "SetMuted");
+		m_funcResume = (funcResume)GetProcAddress(m_hPlayerModule, "Resume");
+		m_funcStop = (funcStop)GetProcAddress(m_hPlayerModule, "Stop");
+		m_funcStatus = (funcStatus)GetProcAddress(m_hPlayerModule, "Status");
+		m_funcWaitForCompletion = (funcWaitForCompletion)GetProcAddress(m_hPlayerModule, "WaitForCompletion");
+		m_funcClose = (funcClose)GetProcAddress(m_hPlayerModule, "Close");
+		m_funcSeekTo = (funcSeekTo)GetProcAddress(m_hPlayerModule, "SeekTo");
+		m_funcVolume = (funcVolume)GetProcAddress(m_hPlayerModule, "Volume");
+		m_funcMute = (funcMute)GetProcAddress(m_hPlayerModule, "Mute");
+		m_funcFullScreen = (funcFullScreen)GetProcAddress(m_hPlayerModule, "FullScreen");
+		m_funcCurrentPlayTime = (funcCurrentPlayTime)GetProcAddress(m_hPlayerModule, "CurrentPlayTime");
+		m_funcDuration = (funcDuration)GetProcAddress(m_hPlayerModule, "Duration");
+		m_funcVideoSize = (funcVideoSize)GetProcAddress(m_hPlayerModule, "VideoSize");
+		m_funcBuffering = (funcBuffering)GetProcAddress(m_hPlayerModule, "Buffering");
 		m_funcInit();
 		m_hPlayer = m_funcCreatePlayer();
 	}
@@ -93,6 +96,6 @@ void CVideoWnd::ResizeVideo()
 	CDuiRect rc;
 	GetWindowRect(m_hWnd, &rc);
 	if (m_hPlayer)
-		m_funcSetWindowSize(m_hPlayer, rc.GetWidth(), rc.GetHeight());
+		m_funcVideoSize(m_hPlayer, rc.GetWidth(), rc.GetHeight());
 }
 

@@ -28,7 +28,7 @@ std::string CreateGuidToString(char *str)
 }
 
 CVideoPlayer::CVideoPlayer()
-	: m_queueFrame(50)
+	: m_queueFrame(5)
 	, m_queuePacket(MAX_VIDEO_SIZE)
 {
 	
@@ -64,7 +64,11 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	if (!CreateDecoder())
 		return false;
 
-	m_pRender->CreateRender(opts.hWnd, m_nWndWidth, m_nWndHeight);
+	if (m_pDecoder)
+		m_pDecoder->Init(m_pCodecCtx);
+
+	if (m_pRender)
+		m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, AV_PIX_FMT_NV12);
 	av_log(NULL, AV_LOG_INFO, "Create Decoder");
 	m_queueFrame.Init();
 	m_queuePacket.Init();
@@ -122,7 +126,8 @@ void CVideoPlayer::Stop()
 	if (m_pHWDeviceCtx)
 		av_buffer_unref(&m_pHWDeviceCtx);
 
-	m_pRender->DestoryRender();
+	if (m_pRender)
+		m_pRender->DestoryRender();
 	m_bPlaying = false;
 }
 
@@ -212,57 +217,8 @@ bool CVideoPlayer::CreateDecoder()
 		return false;
 	}
 
-	m_pDecoder->Init(m_pCodecCtx);
-
 	m_nWndWidth = m_pCodecCtx->width;
 	m_nWndHeight = m_pCodecCtx->height;
-
-	if (m_pFrameOut)
-		av_frame_free(&m_pFrameOut);
-	m_pFrameOut = av_frame_alloc();
-	m_pFrameOut->format = AV_PIX_FMT_YUV420P;
-	m_pFrameOut->width = m_pCodecCtx->width;
-	m_pFrameOut->height = m_pCodecCtx->height;
-	m_pSwsCtx = sws_getContext(
-		m_pCodecCtx->width,
-		m_pCodecCtx->height,
-		AV_PIX_FMT_NV12,
-		m_pFrameOut->width,
-		m_pFrameOut->height,
-		(AVPixelFormat)m_pFrameOut->format,
-		SWS_BILINEAR,
-		nullptr,
-		nullptr,
-		nullptr);
-
-	if (!m_pSwsCtx)
-	{
-		av_log(NULL, AV_LOG_ERROR, "sws_getContext failed.");
-		return false;
-	}
-
-	int nSize = av_image_get_buffer_size(
-		(AVPixelFormat)m_pFrameOut->format,
-		m_pFrameOut->width,
-		m_pFrameOut->height,
-		1);
-
-	if (m_pVideoBuffer)
-		av_free(m_pVideoBuffer);
-	m_pVideoBuffer = (uint8_t*)av_malloc(nSize * sizeof(uint8_t));
-
-	//设置帧数据对应的内存
-	av_image_fill_arrays(
-		m_pFrameOut->data,
-		m_pFrameOut->linesize,
-		m_pVideoBuffer,
-		(AVPixelFormat)m_pFrameOut->format,
-		m_pFrameOut->width,
-		m_pFrameOut->height,
-		1);
-
-	if (m_opts.videoCb)
-		m_opts.videoCb(m_opts.user_data, m_nWndWidth, m_nWndHeight);
 
 	return true;
 }
@@ -282,7 +238,7 @@ void CVideoPlayer::DecodeThread()
 				continue;
 			}
 			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
-			if (m_pDecoder->DecodeFrame(pFrame.get(), m_queuePacket) >= 0)
+			if (m_pDecoder && m_pDecoder->DecodeFrame(pFrame.get(), m_queuePacket) >= 0)
 			{
 				{
 					static double temp_pts = 0.0;
@@ -294,7 +250,7 @@ void CVideoPlayer::DecodeThread()
 					double diff = pts - temp_pts;
 					if (diff_average != 0.0 && std::fabs(diff - diff_average* 1000) > 10.0f)
 						pFrame->pts = (double)diff_average * 1000 / av_q2d(m_pStream->time_base);
-					av_log(NULL, AV_LOG_INFO, "frame pts: %d", pFrame->pts);
+					//av_log(NULL, AV_LOG_INFO, "frame pts: %d", pFrame->pts);
 					//av_log(NULL, AV_LOG_INFO, "diff: %f", diff);
 					temp_pts = pts;
 					diff_count += diff;
@@ -303,6 +259,8 @@ void CVideoPlayer::DecodeThread()
 				}
 				m_queueFrame.Push(std::move(pFrame));
 			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
 		av_log(NULL, AV_LOG_INFO, "Video Decode Thread End!!!");
@@ -361,17 +319,10 @@ void CVideoPlayer::RenderThread()
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 					continue;
 				}
-
-				int nHeight = sws_scale(m_pSwsCtx,
-					(uint8_t const * const *)pFrame->data,
-					pFrame->linesize, 0, pFrame->height, m_pFrameOut->data,
-					m_pFrameOut->linesize);
-
-				if (m_opts.progreeeCb)
-					m_opts.progreeeCb(m_opts.user_data, video_pts);
 			}
 
-			m_pRender->RenderFrameData(m_pFrameOut);
+			if (m_pRender)
+				m_pRender->RenderFrameData(pFrame.get());
 			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 		av_log(NULL, AV_LOG_INFO, "Video Render Thread End!!!");

@@ -13,8 +13,10 @@ CRenderFactory::~CRenderFactory()
 {
 }
 
-IRender * CRenderFactory::CreateRender()
+IRender * CRenderFactory::CreateRender(const std::string strRenderName)
 {
+	if (strRenderName.compare("opengl") == 0)
+		return new CGlRender();
 	return new CSDLRender();
 }
 

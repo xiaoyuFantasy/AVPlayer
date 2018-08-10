@@ -53,7 +53,7 @@ CControlUI * CAVPlayerWnd::CreateControl(LPCTSTR pstrClass)
 	{
 		CWndUI *pUI = new CWndUI;
 		m_pVideo = new CVideoWnd;
-		m_pVideo->Create(m_hWnd, L"VideoWnd", UI_WNDSTYLE_CHILD, UI_CLASSSTYLE_CHILD);
+		m_pVideo->Create(m_hWnd, L"VidaoPanel", UI_WNDSTYLE_CHILD, UI_CLASSSTYLE_CHILD);
 		pUI->Attach(m_pVideo->GetHWND());
 		return pUI;
 	}
@@ -83,11 +83,6 @@ void CAVPlayerWnd::InitWindow()
 	if (IsWindow(m_pVideo->GetHWND()))
 	{
 		m_opts.hWnd = m_pVideo->GetHWND();
-		m_opts.hInstance = CPaintManagerUI::GetInstance();
-		m_opts.durationCb = CAVPlayerWnd::DurationCallback;
-		m_opts.progreeeCb = CAVPlayerWnd::ProgressCallback;
-		m_opts.videoCb = CAVPlayerWnd::VideoCallback;
-		m_opts.errorCb = CAVPlayerWnd::ErrorCallback;
 		m_opts.user_data = this;
 	}
 
@@ -105,13 +100,13 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 	{
 		if (_tcscmp(msg.pSender->GetName(), _T("btnPlay")) == 0)
 		{
-			if (m_pVideo->m_funcIsPlaying && m_pVideo->m_funcIsPlaying(m_pVideo->m_hPlayer))
+			/*if (m_pVideo->m_funcStatus(m_pVideo->m_hPlayer) == PlayingStatus)
 			{
-				m_pVideo->m_funcPause(m_pVideo->m_hPlayer, false);
+				m_pVideo->m_funcPause(m_pVideo->m_hPlayer);
 				m_pBtnPlay->SetVisible(false);
 				m_pBtnPause->SetVisible();
 			}
-			else
+			else*/
 			{
 				std::wstring file_type = L"文件格式";
 				LPCTSTR filter = L"*.mp4;*.mp3;*.avi;*.3g2;*.3gp;*.dvd;*.flv;*.hls;";
@@ -128,16 +123,16 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnPause")) == 0)
 		{
-			if (m_pVideo->m_funcIsPlaying(m_pVideo->m_hPlayer))
+			/*if (m_pVideo->m_funcIsPlaying(m_pVideo->m_hPlayer))
 			{
 				m_pVideo->m_funcPause(m_pVideo->m_hPlayer, true);
 				m_pBtnPlay->SetVisible();
 				m_pBtnPause->SetVisible(false);
-			}
+			}*/
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnStop")) == 0)
 		{
-			if (m_pVideo->m_funcIsPlaying(m_pVideo->m_hPlayer))
+			//if (m_pVideo->m_funcIsPlaying(m_pVideo->m_hPlayer))
 			{
 				m_pVideo->m_funcStop(m_pVideo->m_hPlayer);
 				m_pBtnPlay->SetVisible();
@@ -148,38 +143,38 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnPrevious")) == 0)
 		{
-			int value = m_pSliderPlay->GetValue();
-			m_pVideo->m_funcSeek(m_pVideo->m_hPlayer, value - 5);
+			/*int value = m_pSliderPlay->GetValue();
+			m_pVideo->m_funcSeek(m_pVideo->m_hPlayer, value - 5);*/
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnNext")) == 0)
 		{
-			int value = m_pSliderPlay->GetValue();
-			m_pVideo->m_funcSeek(m_pVideo->m_hPlayer, value + 5);
+			/*int value = m_pSliderPlay->GetValue();
+			m_pVideo->m_funcSeek(m_pVideo->m_hPlayer, value + 5);*/
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnVolume")) == 0)
 		{
 			m_pBtnVolume->SetVisible(false);
 			m_pBtnVolumeZero->SetVisible();
-			m_pVideo->m_funcSetMuted(m_pVideo->m_hPlayer, true);
+			m_pVideo->m_funcMute(m_pVideo->m_hPlayer, true);
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnVolumeZero")) == 0)
 		{
 			m_pBtnVolume->SetVisible();
 			m_pBtnVolumeZero->SetVisible(false);
-			m_pVideo->m_funcSetMuted(m_pVideo->m_hPlayer, false);
+			m_pVideo->m_funcVolume(m_pVideo->m_hPlayer, false);
 		}
 	}
 	else if (msg.sType == DUI_MSGTYPE_VALUECHANGED)
 	{
 		if (_tcscmp(msg.pSender->GetName(), _T("sliderPlay")) == 0)
 		{
-			int value = m_pSliderPlay->GetValue();
-			m_pVideo->m_funcSeek(m_pVideo->m_hPlayer, value);
+			/*int value = m_pSliderPlay->GetValue();
+			m_pVideo->m_funcSeek(m_pVideo->m_hPlayer, value);*/
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("sliderVol")) == 0)
 		{
 			int value = m_pSliderVolume->GetValue();
-			m_pVideo->m_funcSetVolume(m_pVideo->m_hPlayer, value);
+			m_pVideo->m_funcVolume(m_pVideo->m_hPlayer, value);
 		}
 	}
 	__super::Notify(msg);
@@ -212,7 +207,7 @@ LRESULT CAVPlayerWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lPara
 		if (m_scale > 1.5f)
 			m_scale = 1.5f;
 
-		m_pVideo->m_funcSetPanoScale(m_pVideo->m_hPlayer, m_scale);
+		//m_pVideo->m_funcSetPanoScale(m_pVideo->m_hPlayer, m_scale);
 		/*int xPos = LOWORD(lParam);
 		int yPos = HIWORD(lParam);
 		player.m_funcSetPanoRotate(player.m_hPlayer, m_xCurrPos, m_yCurrPos);*/
@@ -280,14 +275,20 @@ void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
 		m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
 		m_opts.bEnableAudio = false;
 		//m_opts.bEnableVideo = false;
-		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
+		//m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
 		//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
-		//m_opts.strPath = "rtmp://192.168.160.132/live/vr";
-		m_pVideo->m_funcPlay(m_pVideo->m_hPlayer, m_opts);
+		//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
+		m_opts.strPath = "rtmp://192.168.1.32:1935/live/32";
+		m_pVideo->m_funcOpen(m_pVideo->m_hPlayer, m_opts, true);
 		m_pBtnPlay->SetVisible(false);
 		m_pBtnPause->SetVisible();
 		m_pBtnStop->SetEnabled();
 		m_pVideoLayout->SetVisible();
+
+		std::thread([&]() {
+			std::this_thread::sleep_for(std::chrono::seconds(5));
+			m_pVideo->m_funcPlay(m_pVideo->m_hPlayer);
+		}).detach();
 	}
 }
 

@@ -8,7 +8,7 @@ public:
 	CRenderFactory();
 	virtual ~CRenderFactory();
 
-	IRender *CreateRender();
+	IRender *CreateRender(const std::string strRenderName = "");
 	void ReleaseRender(IRender** render);
 };
 
