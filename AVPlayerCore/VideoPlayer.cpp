@@ -68,7 +68,7 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 		m_pDecoder->Init(m_pCodecCtx);
 
 	if (m_pRender)
-		m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, AV_PIX_FMT_NV12);
+		m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? AV_PIX_FMT_YUV420P : AV_PIX_FMT_NV12);
 	av_log(NULL, AV_LOG_INFO, "Create Decoder");
 	m_queueFrame.Init();
 	m_queuePacket.Init();

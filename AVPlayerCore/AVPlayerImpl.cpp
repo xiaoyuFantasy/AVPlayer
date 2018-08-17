@@ -123,8 +123,8 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 		return false;
 	});
 
-	/*if (bSync && m_threadOpen.joinable())
-		m_threadOpen.join();*/
+	if (bSync && m_threadOpen.joinable())
+		m_threadOpen.join();
 
 	return true;
 }
@@ -142,13 +142,6 @@ bool CAVPlayerImpl::Play()
 
 	if (m_bVideoOpen)
 		m_videoPlayer.Play();
-
-	av_read_pause(m_pFormatCtx);
-
-	std::thread([&]() {
-		std::this_thread::sleep_for(std::chrono::seconds(120));
-		av_read_play(m_pFormatCtx);
-	}).detach();
 
 	m_threadPlay = std::thread([&]() {
 		while (!m_bStop)
@@ -267,7 +260,7 @@ void CAVPlayerImpl::SeekTo(double fact)
 
 void CAVPlayerImpl::Volume(int nVolume)
 {
-	if (m_bAudioOpen && m_pSound)
+	if (m_pSound)
 		m_pSound->SetVolume(nVolume);
 }
 

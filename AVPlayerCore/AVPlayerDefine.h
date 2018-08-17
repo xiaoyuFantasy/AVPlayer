@@ -6,10 +6,12 @@
 #include <future>
 using namespace std;
 
-enum PLAY_EVENT
+enum PLAYER_EVENT
 {
 	PlayerOpening,
-	PlayerBuffering,
+	PlayerFirstFrame,
+	PlayerAudioState,
+	PlayerVideoState,
 	PlayerPlaying,
 	PlayerPaused,
 	PlayerStopped,
@@ -17,6 +19,41 @@ enum PLAY_EVENT
 	PlayerBackward,
 	PlayerPositionChanged,
 	PlayerClosed,
+};
+
+typedef struct PLAYER_EVENT_T
+{
+	int type;
+	void *userData;
+	union
+	{
+		struct PlayerOpen
+		{
+			bool IsHasVideo = false;
+			bool IsHasAudio = false;
+			int duration;
+		};
+		struct PlayerFirstFrame
+		{
+			int width;
+			int height;
+		};
+		struct PlayerAudioState
+		{
+			int channels;
+			int sample_rate;
+		};
+		struct PlayerVideoState
+		{
+			int nFixelFormat;
+			int width;
+			int height;
+		};
+		struct PlayerPosition
+		{
+			double pos;
+		};
+	};
 };
 
 enum PLAY_STATUS
@@ -36,7 +73,7 @@ enum VIDEO_TYPE
 	PANORAMIC_TYPE,
 };
 
-typedef void(*FuncPlayerEvent)(const PLAY_EVENT e, void *data);
+typedef void(*FuncPlayerEvent)(const PLAYER_EVENT e, void *data);
 
 typedef struct _PLAYER_OPTS
 {

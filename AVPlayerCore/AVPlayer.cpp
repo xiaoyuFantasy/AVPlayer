@@ -69,7 +69,7 @@ EXPORT_API void DestoryAVPlayer(HANDLE handle)
 EXPORT_API bool Open(HANDLE handle, PLAYER_OPTS & opts, bool bSync)
 {
 	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
-	return player->Open(opts);
+	return player->Open(opts, bSync);
 }
 
 EXPORT_API bool Play(HANDLE handle)
