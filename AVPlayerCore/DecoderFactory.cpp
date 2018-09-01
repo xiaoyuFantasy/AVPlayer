@@ -3,16 +3,7 @@
 #include "FFmpegDecoder.h"
 
 
-IDecoder * CDecoderFactory::CreateDecoder()
+std::shared_ptr<IDecoder> CDecoderFactory::CreateDecoder()
 {
-	return new CFFmpegDecoder();
-}
-
-void CDecoderFactory::ReleaseDecoder(IDecoder ** decoder)
-{
-	if (*decoder)
-	{
-		delete *decoder;
-		*decoder = nullptr;
-	}
+	return std::make_shared<CFFmpegDecoder>();
 }

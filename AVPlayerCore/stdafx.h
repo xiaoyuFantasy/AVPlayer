@@ -34,6 +34,8 @@ extern "C" {
 #include <mutex>
 #include <thread>
 #include <functional>
+#include <Objbase.h>
+#pragma comment(lib, "Ole32.lib")
 
 using PacketPtr = std::unique_ptr<AVPacket, std::function<void(AVPacket*)>>;
 using FramePtr = std::unique_ptr<AVFrame, std::function<void(AVFrame*)>>;
@@ -45,4 +47,27 @@ inline std::string err2str(int err)
 	char szErr[MAXCHAR + 1] = { 0 };
 	av_strerror(err, szErr, MAXCHAR);
 	return szErr;
+}
+
+inline std::string CreateGuidToString(char *str)
+{
+	GUID guid;
+	CoCreateGuid(&guid);
+	char buf[MAX_PATH] = { 0 };
+	_snprintf_s(
+		buf,
+		sizeof(buf),
+		"{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
+		guid.Data1, guid.Data2, guid.Data3,
+		guid.Data4[0], guid.Data4[1],
+		guid.Data4[2], guid.Data4[3],
+		guid.Data4[4], guid.Data4[5],
+		guid.Data4[6], guid.Data4[7]);
+
+	std::string strTemp;
+	if (str)
+		strTemp.append(str);
+
+	strTemp.append(buf);
+	return strTemp;
 }

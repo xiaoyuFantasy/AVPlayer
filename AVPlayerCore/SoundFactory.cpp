@@ -11,17 +11,7 @@ CSoundFactory::~CSoundFactory()
 {
 }
 
-ISound * CSoundFactory::CreateSound()
+std::shared_ptr<ISound> CSoundFactory::CreateSound()
 {
-	return new CSDLSound();
-}
-
-void CSoundFactory::ReleaseSound(ISound ** sound)
-{
-	if (*sound)
-	{
-		(*sound)->CloseAudio();
-		delete *sound;
-		*sound = nullptr;
-	}
+	return std::make_shared<CSDLSound>();
 }

@@ -13,19 +13,10 @@ CRenderFactory::~CRenderFactory()
 {
 }
 
-IRender * CRenderFactory::CreateRender(const std::string strRenderName)
+std::shared_ptr<IRender> CRenderFactory::CreateRender(const std::string strRenderName)
 {
 	if (strRenderName.compare("opengl") == 0)
-		return new CGlRender();
-	return new CSDLRender();
-}
-
-void CRenderFactory::ReleaseRender(IRender ** render)
-{
-	if (*render)
-	{
-		(*render)->DestoryRender();
-		delete *render;
-		*render = nullptr;
-	}
+		return std::make_shared<CGlRender>();
+	
+	return std::make_shared<CSDLRender>();
 }

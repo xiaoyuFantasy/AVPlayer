@@ -3,178 +3,195 @@
 
 #include "stdafx.h"
 #include "TestOpengl.h"
+#include <atlimage.h>
+#include <Windows.h>
+#include <iostream>
+using namespace std;
 
-#define MAX_LOADSTRING 100
+#include <glad/glad.h>
+#pragma comment(lib, "glad.lib")
+#include <glfw3.h>
+#pragma comment(lib, "glfw3.lib")
 
-// 全局变量: 
-HINSTANCE hInst;                                // 当前实例
-WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
-WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
+const GLuint WIDTH = 800, HEIGHT = 600;
 
-// 此代码模块中包含的函数的前向声明: 
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+const char *vertexShaderSource = "#version 330 core\n"
+	"layout (location = 0) in vec3 aPos;\n"
+	"void main()\n"
+	"{\n"
+	"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+	"}\0";
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+const char *fragmentShaderSource = "#version 330 core\n"
+	"out vec4 FragColor;\n"
+	"void main()\n"
+	"{\n"
+	"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+	"}\n\0";
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+	std::cout << key << std::endl;
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
+}
 
+int main(int argc, char** argv)
+{
     // TODO: 在此放置代码。
+	std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
+	// Init GLFW
+	glfwInit();
+	// Set all the required options for GLFW
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    // 初始化全局字符串
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_TESTOPENGL, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+	// Create a GLFWwindow object that we can use for GLFW's functions
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", NULL, NULL);
+	glfwMakeContextCurrent(window);
+	if (window == NULL)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return -1;
+	}
 
-    // 执行应用程序初始化: 
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
+	// Set the required callback functions
+	glfwSetKeyCallback(window, key_callback);
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_TESTOPENGL));
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize OpenGL context" << std::endl;
+		return -1;
+	}
 
-    MSG msg;
+	// Define the viewport dimensions
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	glViewport(0, 0, width, height);
+	
+	// build and compile our shader program
+	// ------------------------------------
+	// vertex shader
+	int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShader);
+	// check for shader compile errors
+	int success;
+	char infoLog[MAX_PATH * 2] = { 0 };
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
 
-    // 主消息循环: 
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+	// fragment shader
+	int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	glCompileShader(fragmentShader);
+	// check for shader compile errors
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+	// link shaders
+	int shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
 
-    return (int) msg.wParam;
-}
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	if (!success)
+	{
+		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+	}
 
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
 
+	// set up vertex data (and buffer(s)) and configure vertex attributes
+	// ------------------------------------------------------------------
+	float vertices[] = {
+		-0.5f, -0.5f, 0.0f, // left  
+		0.5f, -0.5f, 0.0f, // right 
+		0.0f,  0.5f, 0.0f  // top   
+	};
 
-//
-//  函数: MyRegisterClass()
-//
-//  目的: 注册窗口类。
-//
-ATOM MyRegisterClass(HINSTANCE hInstance)
-{
-    WNDCLASSEXW wcex;
+	unsigned int VBO, VAO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+	glBindVertexArray(VAO);
 
-    wcex.cbSize = sizeof(WNDCLASSEX);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TESTOPENGL));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_TESTOPENGL);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 
-    return RegisterClassExW(&wcex);
-}
+	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-//
-//   函数: InitInstance(HINSTANCE, int)
-//
-//   目的: 保存实例句柄并创建主窗口
-//
-//   注释: 
-//
-//        在此函数中，我们在全局变量中保存实例句柄并
-//        创建和显示主程序窗口。
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-   hInst = hInstance; // 将实例句柄存储在全局变量中
+	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+	glBindVertexArray(0);
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+	/*CImage image;
+	image.Load(L"..\\debug\\earth1024.bmp");
+	if (image)
+	{
+		HBITMAP hBitmap = image.Detach();
+		BITMAP bitmap = { 0 };
+		::GetObject(hBitmap, sizeof(bitmap), &bitmap);
+		GLenum format, internalFormat;
+		switch (bitmap.bmBitsPixel)
+		{
+		case 8:
+			format = GL_LUMINANCE;
+			internalFormat = GL_LUMINANCE8;
+			break;
+		case 24:
+			format = GL_RGB;
+			internalFormat = GL_RGB8;
+			break;
+		case 32:
+			format = GL_RGBA;
+			internalFormat = GL_RGBA8;
+			break;
+		}
+		glDrawPixels(bitmap.bmWidth, bitmap.bmHeight, format, internalFormat, bitmap.bmBits);
+	}*/
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+	// Game loop
+	while (!glfwWindowShouldClose(window))
+	{
+		// Check if any events have been activated (key pressed, mouse moved etc.) and call corresponding response functions
+		glfwPollEvents();
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+		// Render
+		// Clear the colorbuffer
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-   return TRUE;
-}
+		// draw our first triangle
+		glUseProgram(shaderProgram);
+		glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
-//
-//  函数: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  目的:    处理主窗口的消息。
-//
-//  WM_COMMAND  - 处理应用程序菜单
-//  WM_PAINT    - 绘制主窗口
-//  WM_DESTROY  - 发送退出消息并返回
-//
-//
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // 分析菜单选择: 
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam); 
-            }
-        }
-        break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 在此处添加使用 hdc 的任何绘图代码...
-            EndPaint(hWnd, &ps);
-        }
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
-}
+		// Swap the screen buffers
+		glfwSwapBuffers(window);
+	}
 
-// “关于”框的消息处理程序。
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
+	// Terminates GLFW, clearing any resources allocated by GLFW.
+	glfwTerminate();
+	return 0;
 }

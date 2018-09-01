@@ -21,6 +21,7 @@ public:
 
 protected:
 	int ParseCmdLine(const wchar_t* lpCmdLine, std::map<std::wstring, std::wstring>& pMapCmdLine);
+	static void FuncPlayerEvent(const PLAYER_EVENT e, void *data);
 	static void DurationCallback(void *userdata, int64_t duration);
 	static void ProgressCallback(void *userdata, int64_t progress);
 	static void VideoCallback(void *userdata, int nWidth, int nHeight);

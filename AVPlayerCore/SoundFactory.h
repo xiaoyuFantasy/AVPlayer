@@ -8,7 +8,6 @@ public:
 	CSoundFactory();
 	virtual ~CSoundFactory();
 
-	ISound* CreateSound();
-	void ReleaseSound(ISound **sound);
+	std::shared_ptr<ISound> CreateSound();
 };
 

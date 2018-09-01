@@ -84,6 +84,7 @@ void CAVPlayerWnd::InitWindow()
 	{
 		m_opts.hWnd = m_pVideo->GetHWND();
 		m_opts.user_data = this;
+		m_opts.funcEvent = CAVPlayerWnd::FuncPlayerEvent;
 	}
 
 	ParseCmdLine(GetCommandLineW(), m_mapCmd);
@@ -241,6 +242,13 @@ int CAVPlayerWnd::ParseCmdLine(const wchar_t * lpCmdLine, std::map<std::wstring,
 	return 0;
 }
 
+void CAVPlayerWnd::FuncPlayerEvent(const PLAYER_EVENT e, void * data)
+{
+	CAVPlayerWnd * pAvPlayer = (CAVPlayerWnd*)data;
+	if (PlayerOpening == e)
+		pAvPlayer->m_pVideo->m_funcPlay(pAvPlayer->m_pVideo->m_hPlayer);
+}
+
 void CAVPlayerWnd::DurationCallback(void * userdata, int64_t duration)
 {
 	CAVPlayerWnd *player = (CAVPlayerWnd*)userdata;
@@ -274,7 +282,7 @@ void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
 		m_pLabelName->SetText(szUrl);
 		m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
 		//m_opts.bEnableAudio = false;
-		m_opts.bEnableVideo = false;
+		//m_opts.bEnableVideo = false;
 		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
 		//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
 		//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
@@ -284,11 +292,6 @@ void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
 		m_pBtnPause->SetVisible();
 		m_pBtnStop->SetEnabled();
 		m_pVideoLayout->SetVisible();
-		m_pVideo->m_funcPlay(m_pVideo->m_hPlayer);
-		/*std::thread([&]() {
-			std::this_thread::sleep_for(std::chrono::seconds(5));
-			m_pVideo->m_funcPlay(m_pVideo->m_hPlayer);
-		}).detach();*/
 	}
 }
 

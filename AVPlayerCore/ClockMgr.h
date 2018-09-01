@@ -26,10 +26,8 @@ public:
 	double GetMasterClock();
 
 private:
-	double	m_dAudioClock = 0.0;
-	std::mutex m_mutexAudio;
-	double	m_dVideoClock = 0.0;
-	std::mutex m_mutexVideo;
+	std::atomic<double>	m_dAudioClock = 0.0;
+	std::atomic<double>	m_dVideoClock = 0.0;
 	std::atomic_int64_t	m_timeAudioStart = 0;
 	std::atomic_int64_t m_timeVideoStart = 0;
 	SYNC_TYPE	m_syncType = AV_SYNC_AUDIO_MASTER;

@@ -14,7 +14,7 @@ public:
 	virtual ~CVideoPlayer();
 
 public:
-	void SetRender(IRender* render);
+	void SetRender(std::shared_ptr<IRender> &render);
 	void SetStream(AVStream* pStream);
 	void SetClockMgr(CClockMgr* clockMgr);
 	bool Open(PLAYER_OPTS &opts);
@@ -66,12 +66,7 @@ private:
 	std::thread			m_threadDecode;
 	std::thread			m_threadRender;
 
-	IRender*			m_pRender = nullptr;
-	IDecoder*			m_pDecoder = nullptr;
+	std::shared_ptr<IRender> m_pRender = nullptr;
+	std::shared_ptr<IDecoder> m_pDecoder = nullptr;
 	CClockMgr*			m_pClockMgr = nullptr;
-	//×ª»»
-	/*SwsContext*			m_pSwsCtx = nullptr;
-	uint8_t*			m_pVideoBuffer = nullptr;
-	AVFrame*			m_pFrameOut = nullptr;*/
 };
-

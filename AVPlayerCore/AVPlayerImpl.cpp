@@ -75,7 +75,7 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 		if (m_nVideoIndex != -1 && m_opts.bEnableVideo)
 		{
 			if (!m_pRender)
-				m_pRender = CRenderFactory::getSingleModule().CreateRender();
+				m_pRender = CRenderFactory::getSingleModule().CreateRender("sdl");
 			m_pRender->InitRender();
 			m_videoPlayer.SetRender(m_pRender);
 			m_videoPlayer.SetStream(m_pFormatCtx->streams[m_nVideoIndex]);
@@ -114,6 +114,7 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 		m_bOpened = true;
 		m_bOpening = false;
 		m_statusPlayer = OpenedStatus;
+		OnOpen(m_nAudioIndex > 0 ? true : false, m_nVideoIndex > 0 ? true : false);
 		return true;
 
 	OPEN_ERROR:
@@ -123,9 +124,6 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 		return false;
 	});
 
-	if (bSync && m_threadOpen.joinable())
-		m_threadOpen.join();
-
 	return true;
 }
 
@@ -133,7 +131,6 @@ bool CAVPlayerImpl::Play()
 {
 	if (m_bPlaying || !m_bOpened)
 		return false;
-
 	m_bPlaying = true;
 	m_statusPlayer = PlayingStatus;
 
@@ -179,7 +176,7 @@ bool CAVPlayerImpl::Play()
 			{
 				if (ret == AVERROR_EOF || avio_feof(m_pFormatCtx->pb))
 					av_log(NULL, AV_LOG_ERROR, "av_read_frame failed eof error!!!");
-				std::this_thread::sleep_for(std::chrono::milliseconds(40));
+				std::this_thread::sleep_for(std::chrono::seconds(1));
 				continue;
 			}
 
@@ -236,14 +233,15 @@ void CAVPlayerImpl::Close()
 {
 	m_bStop = true;
 	m_cvPause.notify_all();
+
+	if (m_threadOpen.joinable())
+		m_threadOpen.join();
+
 	if (m_threadPlay.joinable())
 		m_threadPlay.join();
 
 	m_audioPlayer.Close();
 	m_videoPlayer.Stop();
-
-	CSoundFactory::getSingleModule().ReleaseSound(&m_pSound);
-	CRenderFactory::getSingleModule().ReleaseRender(&m_pRender);
 
 	avformat_close_input(&m_pFormatCtx);
 	if (m_pFormatCtx)
@@ -300,4 +298,12 @@ int CAVPlayerImpl::interrupt_callback(void * lparam)
 	if (p->m_bStop)
 		return 1;
 	return 0;
+}
+
+void CAVPlayerImpl::OnOpen(bool IsHasAuido, bool IsHasVideo)
+{
+	if (m_opts.funcEvent)
+	{
+		m_opts.funcEvent(PlayerOpening, m_opts.user_data);
+	}
 }

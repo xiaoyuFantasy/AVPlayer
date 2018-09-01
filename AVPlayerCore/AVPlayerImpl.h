@@ -10,7 +10,7 @@ public:
 	virtual ~CAVPlayerImpl();
 
 public:
-	// 打开一个媒体文件
+	// 打开一个媒体文件.
 	bool Open(PLAYER_OPTS &opts, bool bSync = false);
 
 	// 开始播放视频.
@@ -25,13 +25,13 @@ public:
 	// 停止播放.
 	void Stop();
 
-	// 播放状态
+	// 播放状态.
 	PLAY_STATUS Status();
 
 	// 等待播放直到完成.
 	bool WaitForCompletion();
 
-	// 关闭媒体
+	// 关闭媒体.
 	void Close();
 
 	// seek到某个时间播放, 按视频时长的百分比.
@@ -60,6 +60,7 @@ public:
 
 protected:
 	static int interrupt_callback(void * lparam);
+	void OnOpen(bool IsHasAuido, bool IsHasVideo);
 
 private:
 	PLAYER_OPTS		m_opts;
@@ -83,9 +84,9 @@ private:
 	bool				m_bAudioOpen = false;
 	bool				m_bVideoOpen = false;
 	CVideoPlayer		m_videoPlayer;
-	CAudioPlayer		m_audioPlayer;
-	IRender*			m_pRender = nullptr;
-	ISound*				m_pSound = nullptr;
+	CAudioPlayer		m_audioPlayer;	
+	std::shared_ptr<IRender> m_pRender = nullptr;
+	std::shared_ptr<ISound> m_pSound = nullptr;
 	CClockMgr			m_clockMgr;
 };
 

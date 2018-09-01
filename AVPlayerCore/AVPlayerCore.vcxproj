@@ -87,13 +87,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AVPLAYERCORE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../3rd/ffmpeg/include/;../3rd/sdl/include/;../3rd/glad/include/;../3rd/glfw/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3rd/ffmpeg/include/;../3rd/sdl/include/;../3rd/IVRRender/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../3rd/ffmpeg/lib/;../3rd/sdl/lib/x86/;../3rd/glad/lib/;../3rd/glfw/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../3rd/ffmpeg/lib/;../3rd/sdl/lib/x86/;../3rd/IVRRender/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -154,6 +154,7 @@
     <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="AVPlayer.h" />
     <ClInclude Include="ClockMgr.h" />
+    <ClInclude Include="D3DRender.h" />
     <ClInclude Include="DecoderDefine.h" />
     <ClInclude Include="FFmpegDecoder.h" />
     <ClInclude Include="DecoderFactory.h" />
@@ -178,6 +179,7 @@
     <ClCompile Include="AudioPlayer.cpp" />
     <ClCompile Include="AVPlayer.cpp" />
     <ClCompile Include="ClockMgr.cpp" />
+    <ClCompile Include="D3DRender.cpp" />
     <ClCompile Include="FFmpegDecoder.cpp" />
     <ClCompile Include="DecoderFactory.cpp" />
     <ClCompile Include="dllmain.cpp">

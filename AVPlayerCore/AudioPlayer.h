@@ -18,7 +18,7 @@ public:
 
 public:
 	void SetStream(AVStream *pStream);
-	void SetSound(ISound* pSound);
+	void SetSound(std::shared_ptr<ISound> &pSound);
 	void SetClockMgr(CClockMgr* clockMgr);
 	bool Open();
 	void Close();
@@ -44,8 +44,8 @@ private:
 	SwrContext*			m_pSwrCtx = nullptr;
 	double				m_clock = 0.0;
 	double				m_pts = 0.0;
-	ISound*				m_pSound = nullptr;
-	IDecoder*			m_pDecoder = nullptr;
+	std::shared_ptr<ISound>	m_pSound = nullptr;
+	std::shared_ptr<IDecoder> m_pDecoder = nullptr;
 	CClockMgr*			m_pClockMgr = nullptr;
 };
 

@@ -11,7 +11,7 @@ CAudioPlayer::CAudioPlayer()
 
 CAudioPlayer::~CAudioPlayer()
 {
-	CDecoderFactory::getSingleModule().ReleaseDecoder(&m_pDecoder);
+	
 }
 
 void CAudioPlayer::SetStream(AVStream * pStream)
@@ -19,7 +19,7 @@ void CAudioPlayer::SetStream(AVStream * pStream)
 	m_pStream = pStream;
 }
 
-void CAudioPlayer::SetSound(ISound * pSound)
+void CAudioPlayer::SetSound(std::shared_ptr<ISound> &pSound)
 {
 	m_pSound = pSound;
 }
@@ -56,7 +56,8 @@ bool CAudioPlayer::Open()
 
 void CAudioPlayer::Close()
 {
-	m_pSound->CloseAudio();
+	if (m_pSound)
+		m_pSound->CloseAudio();
 
 	if (m_pSwrCtx)
 		swr_free(&m_pSwrCtx);

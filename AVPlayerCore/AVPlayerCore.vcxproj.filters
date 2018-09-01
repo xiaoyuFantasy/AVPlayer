@@ -39,25 +39,10 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="VideoPlayer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="AudioPlayer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="VideoDefine.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Lock.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Queue.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="AudioDefine.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="AVPlayerDefine.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="DecoderFactory.h">
@@ -102,18 +87,30 @@
     <ClInclude Include="AVPlayer.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="AudioPlayer.h">
+      <Filter>player</Filter>
+    </ClInclude>
+    <ClInclude Include="AudioDefine.h">
+      <Filter>player</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoPlayer.h">
+      <Filter>player</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoDefine.h">
+      <Filter>player</Filter>
+    </ClInclude>
+    <ClInclude Include="AVPlayerDefine.h">
+      <Filter>player</Filter>
+    </ClInclude>
+    <ClInclude Include="D3DRender.h">
+      <Filter>render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="dllmain.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="VideoPlayer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="AudioPlayer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="FFmpegDecoder.cpp">
@@ -145,6 +142,15 @@
     </ClCompile>
     <ClCompile Include="AVPlayer.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AudioPlayer.cpp">
+      <Filter>player</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoPlayer.cpp">
+      <Filter>player</Filter>
+    </ClCompile>
+    <ClCompile Include="D3DRender.cpp">
+      <Filter>render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

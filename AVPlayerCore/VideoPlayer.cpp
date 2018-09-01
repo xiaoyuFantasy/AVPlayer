@@ -1,31 +1,9 @@
 #include "stdafx.h"
 #include "VideoPlayer.h"
 #include "DecoderFactory.h"
-#include <Objbase.h>
-#pragma comment(lib, "Ole32.lib")
 
-std::string CreateGuidToString(char *str)
-{
-	GUID guid;
-	CoCreateGuid(&guid);
-	char buf[MAX_PATH] = { 0 };
-	_snprintf_s(
-		buf,
-		sizeof(buf),
-		"{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
-		guid.Data1, guid.Data2, guid.Data3,
-		guid.Data4[0], guid.Data4[1],
-		guid.Data4[2], guid.Data4[3],
-		guid.Data4[4], guid.Data4[5],
-		guid.Data4[6], guid.Data4[7]);
 
-	std::string strTemp;
-	if (str)
-		strTemp.append(str);
 
-	strTemp.append(buf);
-	return strTemp;
-}
 
 CVideoPlayer::CVideoPlayer()
 	: m_queueFrame(5)
@@ -38,7 +16,7 @@ CVideoPlayer::~CVideoPlayer()
 {
 }
 
-void CVideoPlayer::SetRender(IRender * render)
+void CVideoPlayer::SetRender(std::shared_ptr<IRender> &render)
 {
 	m_pRender = render;
 }
@@ -240,23 +218,23 @@ void CVideoPlayer::DecodeThread()
 			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
 			if (m_pDecoder && m_pDecoder->DecodeFrame(pFrame.get(), m_queuePacket) >= 0)
 			{
-				{
-					static double temp_pts = 0.0;
-					static double diff_count = 0.0;
-					static double diff_average = 0.0;
-					static int64_t frame_count = 0;
-					frame_count++;
-					double pts = (pFrame->best_effort_timestamp - m_pStream->start_time) * av_q2d(m_pStream->time_base);
-					double diff = pts - temp_pts;
-					if (diff_average != 0.0 && std::fabs(diff - diff_average* 1000) > 10.0f)
-						pFrame->pts = (double)diff_average * 1000 / av_q2d(m_pStream->time_base);
-					//av_log(NULL, AV_LOG_INFO, "frame pts: %d", pFrame->pts);
-					//av_log(NULL, AV_LOG_INFO, "diff: %f", diff);
-					temp_pts = pts;
-					diff_count += diff;
-					diff_average = diff_count / double(frame_count);
-					//av_log(NULL, AV_LOG_INFO, "pts:%d, diff:%f, frame pts:%d", pts, diff_average, pFrame->pts/1000);
-				}
+				//{
+				//	static double temp_pts = 0.0;
+				//	static double diff_count = 0.0;
+				//	static double diff_average = 0.0;
+				//	static int64_t frame_count = 0;
+				//	frame_count++;
+				//	double pts = (pFrame->best_effort_timestamp - m_pStream->start_time) * av_q2d(m_pStream->time_base);
+				//	double diff = pts - temp_pts;
+				//	if (diff_average != 0.0 && std::fabs(diff - diff_average* 1000) > 10.0f)
+				//		pFrame->pts = (double)diff_average * 1000 / av_q2d(m_pStream->time_base);
+				//	//av_log(NULL, AV_LOG_INFO, "frame pts: %d", pFrame->pts);
+				//	//av_log(NULL, AV_LOG_INFO, "diff: %f", diff);
+				//	temp_pts = pts;
+				//	diff_count += diff;
+				//	diff_average = diff_count / double(frame_count);
+				//	//av_log(NULL, AV_LOG_INFO, "pts:%d, diff:%f, frame pts:%d", pts, diff_average, pFrame->pts/1000);
+				//}
 				m_queueFrame.Push(std::move(pFrame));
 			}
 

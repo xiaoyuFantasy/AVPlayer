@@ -60,6 +60,10 @@ void CVideoWnd::InitWindow()
 		m_funcInit();
 		m_hPlayer = m_funcCreatePlayer();
 	}
+	else
+	{
+		int err = GetLastError();
+	}
 }
 
 void CVideoWnd::Notify(TNotifyUI & msg)

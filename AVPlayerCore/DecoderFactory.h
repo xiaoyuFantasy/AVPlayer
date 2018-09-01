@@ -8,7 +8,6 @@ public:
 	CDecoderFactory() = default;
 	virtual ~CDecoderFactory() = default;
 
-	IDecoder* CreateDecoder();
-	void ReleaseDecoder(IDecoder **decoder);
+	std::shared_ptr<IDecoder> CreateDecoder();
 };
 
