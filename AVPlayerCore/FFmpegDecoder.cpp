@@ -21,9 +21,9 @@ void CFFmpegDecoder::UnInit()
 	m_pCodecCtx = nullptr;
 }
 
-int CFFmpegDecoder::DecodeFrame(AVFrame * frame, PacketQueue & queue)
+int CFFmpegDecoder::DecodeFrame(FramePtr& pFrame, PacketQueue & queue)
 {
-	if (!m_pCodecCtx || !frame)
+	if (!m_pCodecCtx || !pFrame)
 		return -1;
 
 	int ret = AVERROR(EAGAIN);
@@ -35,27 +35,30 @@ int CFFmpegDecoder::DecodeFrame(AVFrame * frame, PacketQueue & queue)
 			switch (m_pCodecCtx->codec_type)
 			{
 			case AVMEDIA_TYPE_AUDIO:
-				ret = avcodec_receive_frame(m_pCodecCtx, frame);
+				ret = avcodec_receive_frame(m_pCodecCtx, pFrame.get());
 				if (ret >= 0)
 				{
-					AVRational tb{ 1, frame->sample_rate };
-					if (frame->pts == AV_NOPTS_VALUE)
-						frame->pts = av_rescale_q(frame->pts, m_pCodecCtx->pkt_timebase, tb) + frame->pkt_duration;
+					AVRational tb{ 1, pFrame->sample_rate };
+					if (pFrame->pts == AV_NOPTS_VALUE)
+						pFrame->pts = av_rescale_q(pFrame->pts, m_pCodecCtx->pkt_timebase, tb) + pFrame->pkt_duration;
 				}
 				break;
 			case AVMEDIA_TYPE_VIDEO:
 				ret = avcodec_receive_frame(m_pCodecCtx, pTempFrame.get());
 				if (ret >= 0)
 				{
+					// ÅÐ¶ÏÊÇ·ñÊÇÓ²½â
 					if (m_pCodecCtx->hw_device_ctx)
 					{
-						if ((ret = av_hwframe_transfer_data(frame, pTempFrame.get(), 0)) < 0)
+						if ((ret = av_hwframe_transfer_data(pFrame.get(), pTempFrame.get(), 0)) < 0)
 						{
 							av_log(NULL, AV_LOG_ERROR, "Error transferring the data to system memory. err:%d", ret);
 							continue;
 						}
-						av_frame_copy_props(frame, pTempFrame.get());
+						av_frame_copy_props(pFrame.get(), pTempFrame.get());
 					}
+					else
+						pFrame = std::move(pTempFrame);
 				}
 				break;
 			default:

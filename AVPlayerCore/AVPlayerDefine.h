@@ -73,6 +73,12 @@ enum VIDEO_TYPE
 	PANORAMIC_TYPE,
 };
 
+enum DECODE_TYPE
+{
+	CPU_DECODE,
+	GPU_DECODE,
+};
+
 typedef void(*FuncPlayerEvent)(const PLAYER_EVENT e, void *data);
 
 typedef struct _PLAYER_OPTS
@@ -83,5 +89,6 @@ typedef struct _PLAYER_OPTS
 	bool		bEnableVideo = true;
 	bool		bEnableAudio = true;
 	VIDEO_TYPE	video_type = NORMAL_TYPE;
+	bool		bGpuDecode = true;
 	FuncPlayerEvent	funcEvent = nullptr;
 } PLAYER_OPTS;

@@ -25,7 +25,7 @@ bool CGlRender::CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelFormat
 	RECT rc;
 	GetWindowRect(m_hWnd, &rc);
 	std::string strWndName = CreateGuidToString("MPlayerWnd_");
-	PANO_INFO info{ strWndName.c_str(), (char*)strWndName.c_str(), 1, nWidth, nHeight, 0, 0, rc.right - rc.left, rc.bottom - rc.top, nullptr, PLAY_MODE::STANDARD, FRAME_FORMAT::VIDEO };
+	PANO_INFO info{ strWndName.c_str(), (char*)strWndName.c_str(), 1, nWidth, nHeight, 0, 0, rc.right - rc.left, rc.bottom - rc.top, nullptr, PLAY_MODE::PANO2D, FRAME_FORMAT::VIDEO };
 	m_hNativeRender = NativeOnCreate(m_hWnd, nullptr, nullptr, &info);
 	if (nullptr == m_hNativeRender)
 	{
@@ -116,17 +116,17 @@ void CGlRender::SetRenderSize(int width, int height)
 		NativeUpdateViewport(m_hNativeRender, 0, 0, m_nWndWidth, m_nWndHeight);
 }
 
-void CGlRender::RenderFrameData(AVFrame *frame)
+void CGlRender::RenderFrameData(FramePtr pFrame)
 {
 	if (m_bClose)
 		return;
 
 	int nHeight = sws_scale(
 		m_pSwsCtx,
-		(uint8_t const * const *)frame->data,
-		frame->linesize,
+		(uint8_t const * const *)pFrame->data,
+		pFrame->linesize,
 		0,
-		frame->height,
+		pFrame->height,
 		m_pFrameOut->data,
 		m_pFrameOut->linesize);
 

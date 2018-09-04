@@ -132,7 +132,7 @@ int CAudioPlayer::funcDecodeFrame(uint8_t ** buffer)
 	int wanted_nb_samples;
 
 	FramePtr frame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
-	if (m_pDecoder->DecodeFrame(frame.get(), m_queuePacket) < 0)
+	if (m_pDecoder->DecodeFrame(frame, m_queuePacket) < 0)
 		return -1;
 
 	if (frame->channels > 0 && frame->channel_layout == 0)

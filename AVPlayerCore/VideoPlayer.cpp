@@ -46,7 +46,7 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 		m_pDecoder->Init(m_pCodecCtx);
 
 	if (m_pRender)
-		m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? AV_PIX_FMT_YUV420P : AV_PIX_FMT_NV12);
+		m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? m_pCodecCtx->pix_fmt : AV_PIX_FMT_NV12);
 	av_log(NULL, AV_LOG_INFO, "Create Decoder");
 	m_queueFrame.Init();
 	m_queuePacket.Init();
@@ -172,17 +172,20 @@ bool CVideoPlayer::CreateDecoder()
 		return false;
 	}
 
-	if (m_pHWDeviceCtx)
-		av_buffer_unref(&m_pHWDeviceCtx);
-
-	AVHWDeviceType nHWTypes[3] = { AV_HWDEVICE_TYPE_DXVA2 , AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_CUDA };
-	for (size_t i = 0; i < sizeof(nHWTypes); i++)
+	if (m_opts.bGpuDecode)
 	{
-		if ((ret = av_hwdevice_ctx_create(&m_pHWDeviceCtx, nHWTypes[i], NULL, NULL, 0)) == 0)
+		if (m_pHWDeviceCtx)
+			av_buffer_unref(&m_pHWDeviceCtx);
+
+		AVHWDeviceType nHWTypes[3] = { AV_HWDEVICE_TYPE_DXVA2 , AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_CUDA };
+		for (size_t i = 0; i < sizeof(nHWTypes); i++)
 		{
-			m_pCodecCtx->hw_device_ctx = av_buffer_ref(m_pHWDeviceCtx);
-			m_typeCodec = nHWTypes[i];
-			break;
+			if ((ret = av_hwdevice_ctx_create(&m_pHWDeviceCtx, nHWTypes[i], NULL, NULL, 0)) == 0)
+			{
+				m_pCodecCtx->hw_device_ctx = av_buffer_ref(m_pHWDeviceCtx);
+				m_typeCodec = nHWTypes[i];
+				break;
+			}
 		}
 	}
 
@@ -216,7 +219,7 @@ void CVideoPlayer::DecodeThread()
 				continue;
 			}
 			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
-			if (m_pDecoder && m_pDecoder->DecodeFrame(pFrame.get(), m_queuePacket) >= 0)
+			if (m_pDecoder && m_pDecoder->DecodeFrame(pFrame, m_queuePacket) >= 0)
 			{
 				//{
 				//	static double temp_pts = 0.0;
@@ -300,7 +303,7 @@ void CVideoPlayer::RenderThread()
 			}
 
 			if (m_pRender)
-				m_pRender->RenderFrameData(pFrame.get());
+				m_pRender->RenderFrameData(std::move(pFrame));
 			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 		av_log(NULL, AV_LOG_INFO, "Video Render Thread End!!!");

@@ -92,8 +92,7 @@ void CAVPlayerWnd::InitWindow()
 	if (itor != m_mapCmd.end())
 	{
 		OnFileSelected(true, itor->second);
-	}
-}
+	}}
 
 void CAVPlayerWnd::Notify(TNotifyUI & msg)
 {
@@ -283,6 +282,7 @@ void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
 		m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
 		//m_opts.bEnableAudio = false;
 		//m_opts.bEnableVideo = false;
+		m_opts.bGpuDecode = false;
 		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
 		//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
 		//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
