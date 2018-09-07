@@ -68,13 +68,13 @@ bool CD3DRender::CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelForma
 	m_nVideoWidth = nWidth;
 	m_nVideoHeight = nHeight;
 
-	if (AV_PIX_FMT_BGRA != pixelFormat )
+	if (AV_PIX_FMT_YUV420P != pixelFormat )
 	{
 		//创建转换函数
 		if (m_pFrameOut)
 			av_frame_free(&m_pFrameOut);
 		m_pFrameOut = av_frame_alloc();
-		m_pFrameOut->format = AV_PIX_FMT_BGRA;
+		m_pFrameOut->format = AV_PIX_FMT_YUV420P;
 		m_pFrameOut->width = nWidth;
 		m_pFrameOut->height = nHeight;
 		m_pSwsCtx = sws_getContext(
@@ -167,22 +167,23 @@ void CD3DRender::RenderFrameData(FramePtr pFrame)
 
 	int stride = d3d_rect.Pitch;
 	int pixel_w_size = m_nVideoWidth * 4;
-	for (int i = 0; i< m_nVideoHeight; i++) {
+	/*for (int i = 0; i< m_nVideoHeight; i++) {
 		OutputDebugString(std::to_wstring(i).c_str());
 		OutputDebugString(L"\n");
 		memcpy(pDest, pSrc, pixel_w_size);
 		pDest += stride;
 		pSrc += pixel_w_size;
-	}
-	/*for (unsigned long i = 0; i < m_nVideoHeight; i++) {
-		memcpy(pDest + i * stride, pSrc + i * m_nVideoWidth, m_nVideoWidth);
-	}
-	for (unsigned long i = 0; i < m_nVideoHeight / 2; i++) {
-		memcpy(pDest + stride * m_nVideoHeight + i * stride / 2, pSrc + m_nVideoWidth * m_nVideoHeight + m_nVideoWidth * m_nVideoHeight / 4 + i * m_nVideoWidth / 2, m_nVideoWidth / 2);
-	}
-	for (unsigned long i = 0; i < m_nVideoHeight / 2; i++) {
-		memcpy(pDest + stride * m_nVideoHeight + stride * m_nVideoHeight / 4 + i * stride / 2, pSrc + m_nVideoWidth * m_nVideoHeight + i * m_nVideoWidth / 2, m_nVideoWidth / 2);
 	}*/
+
+	/*for (int i = 0; i < pixel_h; i++) {
+		memcpy(pDest + i * stride, pSrc + i * pixel_w, pixel_w);
+	}
+	for (int i = 0; i < pixel_h / 2; i++) {
+		memcpy(pDest + stride * pixel_h + i * stride / 2, pSrc + pixel_w * pixel_h + pixel_w * pixel_h / 4 + i * pixel_w / 2, pixel_w / 2);
+	}
+	for (int i = 0; i < pixel_h / 2; i++) {
+		memcpy(pDest + stride * pixel_h + stride * pixel_h / 4 + i * stride / 2, pSrc + pixel_w * pixel_h + i * pixel_w / 2, pixel_w / 2);*/
+
 
 	hRet = m_pDirect3DSurfaceRender->UnlockRect();
 	if (FAILED(hRet))

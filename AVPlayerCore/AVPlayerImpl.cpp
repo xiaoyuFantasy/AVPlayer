@@ -75,7 +75,7 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 		if (m_nVideoIndex != -1 && m_opts.bEnableVideo)
 		{
 			if (!m_pRender)
-				m_pRender = CRenderFactory::getSingleModule().CreateRender("sdl");
+				m_pRender = CRenderFactory::getSingleModule().CreateRender("opengl");
 			m_pRender->InitRender();
 			m_videoPlayer.SetRender(m_pRender);
 			m_videoPlayer.SetStream(m_pFormatCtx->streams[m_nVideoIndex]);

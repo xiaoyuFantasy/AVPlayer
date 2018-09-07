@@ -28,18 +28,18 @@ extern "C" {
  * 参数4	: 窗口信息结构体
  * 返回值	: 成功返回创建窗口句柄，失败返回0
  */
-PANO_APICALL HANDLE PANO_APIENTRY NativeOnCreate(HWND hwndParent, HINSTANCE hInstance, LPVOID lpParam, PANO_INFO* panoramaInfo);
+PANO_APICALL HWND PANO_APIENTRY NativeOnCreate(HWND hwndParent, HINSTANCE hInstance, LPVOID lpParam, PANO_INFO* panoramaInfo);
 
-PANO_APICALL void PANO_APIENTRY NativeOnResume(HANDLE handle);
+PANO_APICALL void PANO_APIENTRY NativeOnResume(HWND hwnd);
 
-PANO_APICALL void PANO_APIENTRY NativeOnPause(HANDLE handle);
+PANO_APICALL void PANO_APIENTRY NativeOnPause(HWND hwnd);
 
 /**
  * 功能描述	: 删除指定窗口
  * 参数1	: 窗口句柄
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeOnDestroy(HANDLE handle);
+PANO_APICALL void PANO_APIENTRY NativeOnDestroy(HWND hwnd);
 
 /**
  * 功能描述	: 设置当前窗口播放模式
@@ -47,7 +47,7 @@ PANO_APICALL void PANO_APIENTRY NativeOnDestroy(HANDLE handle);
  * 参数2	: 模式选择
  * 返回值	: 成功翻译true，失败返回false
  */
-PANO_APICALL bool PANO_APIENTRY NativeSetPlayMode(HANDLE handle, PLAY_MODE playMode);
+PANO_APICALL bool PANO_APIENTRY NativeSetPlayMode(HWND hwnd, PLAY_MODE playMode);
 
 /**
  * 功能描述	: 设置渲染数据
@@ -56,14 +56,14 @@ PANO_APICALL bool PANO_APIENTRY NativeSetPlayMode(HANDLE handle, PLAY_MODE playM
  * 参数3	: 渲染数据(渲染图片时frameData为空NULL即可)
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeSetFrameData(HANDLE handle, STREAM_FORMAT format, unsigned char* frameData[]);
+PANO_APICALL void PANO_APIENTRY NativeSetFrameData(HWND hwnd, STREAM_FORMAT format, unsigned char* frameData[]);
 
 /**
  * 功能描述	: 渲染一帧数据
  * 参数1	: 窗口句柄
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeDraw(HANDLE handle);
+PANO_APICALL void PANO_APIENTRY NativeDraw(HWND hwnd);
 
 /**
  * 功能描述	: 更新视口
@@ -74,21 +74,21 @@ PANO_APICALL void PANO_APIENTRY NativeDraw(HANDLE handle);
  * 参数5	: 窗口高
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeUpdateViewport(HANDLE handle, int windowPosX, int windowPosY, int windowWidth, int windowHeight);
+PANO_APICALL void PANO_APIENTRY NativeUpdateViewport(HWND hwnd, int windowPosX, int windowPosY, int windowWidth, int windowHeight);
 
 /**
  * 功能描述	: 显示窗口
  * 参数1	: 窗口句柄
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeShowWindows(HANDLE handle);
+PANO_APICALL void PANO_APIENTRY NativeShowWindows(HWND hwnd);
 
 /**
  * 功能描述	: 隐藏窗口
  * 参数1	: 窗口句柄
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeHiddenWindows(HANDLE handle);
+PANO_APICALL void PANO_APIENTRY NativeHiddenWindows(HWND hwnd);
 
 /**
  * 功能描述	: 设置缩放
@@ -96,7 +96,7 @@ PANO_APICALL void PANO_APIENTRY NativeHiddenWindows(HANDLE handle);
  * 参数2	: 缩放因子
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeSetScale(HANDLE handle, float factor);
+PANO_APICALL void PANO_APIENTRY NativeSetScale(HWND hwnd, float factor);
 
 /**
  * 功能描述	: 设置旋转
@@ -105,7 +105,7 @@ PANO_APICALL void PANO_APIENTRY NativeSetScale(HANDLE handle, float factor);
  * 参数3	: y弧度值
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeSetRotate(HANDLE handle, float x, float y);
+PANO_APICALL void PANO_APIENTRY NativeSetRotate(HWND hwnd, float x, float y);
 
 /**
  * 功能描述	: 鱼眼小行星旋转
@@ -114,7 +114,7 @@ PANO_APICALL void PANO_APIENTRY NativeSetRotate(HANDLE handle, float x, float y)
  * 参数3	: 经度值（y值 -π ~ π）
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeSetScroll(HANDLE handle, float latitude, float longitude);
+PANO_APICALL void PANO_APIENTRY NativeSetScroll(HWND hwnd, float latitude, float longitude);
 
 /**
  * 功能描述	: 反转显示
@@ -122,7 +122,7 @@ PANO_APICALL void PANO_APIENTRY NativeSetScroll(HANDLE handle, float latitude, f
  * 参数2	: 是否反转
  * 返回值	: 无
  */
-PANO_APICALL void PANO_APIENTRY NativeSetReverse(HANDLE handle, bool filp);
+PANO_APICALL void PANO_APIENTRY NativeSetReverse(HWND hwnd, bool filp);
 
 #ifdef __cplusplus
 }

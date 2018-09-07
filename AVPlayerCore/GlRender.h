@@ -76,6 +76,6 @@ private:
 	SwsContext*			m_pSwsCtx = nullptr;
 	uint8_t*			m_pVideoBuffer = nullptr;
 	AVFrame*			m_pFrameOut = nullptr;
-	HANDLE				m_hNativeRender = nullptr;
+	HWND				m_hNativeRender = nullptr;
 };
 

@@ -90,5 +90,6 @@ typedef struct _PLAYER_OPTS
 	bool		bEnableAudio = true;
 	VIDEO_TYPE	video_type = NORMAL_TYPE;
 	bool		bGpuDecode = true;
+	HINSTANCE	hInstance = nullptr;
 	FuncPlayerEvent	funcEvent = nullptr;
 } PLAYER_OPTS;

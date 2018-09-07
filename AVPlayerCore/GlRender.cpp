@@ -19,20 +19,18 @@ bool CGlRender::CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelFormat
 	if (!::IsWindow(hWnd))
 		return false;
 
-	m_hWnd = hWnd;
-	::ShowWindow(m_hWnd, SW_SHOW);
-
 	RECT rc;
-	GetWindowRect(m_hWnd, &rc);
+	GetWindowRect(hWnd, &rc);
 	std::string strWndName = CreateGuidToString("MPlayerWnd_");
 	PANO_INFO info{ strWndName.c_str(), (char*)strWndName.c_str(), 1, nWidth, nHeight, 0, 0, rc.right - rc.left, rc.bottom - rc.top, nullptr, PLAY_MODE::PANO2D, FRAME_FORMAT::VIDEO };
-	m_hNativeRender = NativeOnCreate(m_hWnd, nullptr, nullptr, &info);
+	m_hNativeRender = NativeOnCreate(hWnd, nullptr, nullptr, &info);
 	if (nullptr == m_hNativeRender)
 	{
 		av_log(NULL, AV_LOG_ERROR, "NativeOnCreate Failed!!!");
 		return false;
 	}
 
+	m_hWnd = hWnd;
 	m_nVideoWidth = nWidth;
 	m_nVideoHeight = nHeight;
 	m_nPixelFormat = pixelFormat;

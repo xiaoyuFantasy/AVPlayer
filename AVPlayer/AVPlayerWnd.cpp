@@ -84,6 +84,7 @@ void CAVPlayerWnd::InitWindow()
 	{
 		m_opts.hWnd = m_pVideo->GetHWND();
 		m_opts.user_data = this;
+		m_opts.hInstance = m_PaintManager.GetInstance();
 		m_opts.funcEvent = CAVPlayerWnd::FuncPlayerEvent;
 	}
 
@@ -284,6 +285,7 @@ void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
 		//m_opts.bEnableVideo = false;
 		m_opts.bGpuDecode = false;
 		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
+		//m_opts.hWnd = ::CreateWindowEx(WS_EX_APPWINDOW, L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 0, 0, 400, 300, nullptr, nullptr, m_PaintManager.GetInstance(), nullptr);
 		//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
 		//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
 		//m_opts.strPath = "rtmp://192.168.1.32:1935/live/32";
