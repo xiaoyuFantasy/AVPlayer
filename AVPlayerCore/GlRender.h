@@ -1,5 +1,10 @@
 #pragma once
 #include "RenderDefine.h"
+#include <shader.h>
+#include <glad\glad.h>
+#pragma comment(lib, "Opengl32.lib")
+#pragma comment(lib, "glad.lib")
+
 
 #define PANO_APICALL					__declspec(dllexport)
 #define PANO_APIENTRY					__stdcall
@@ -37,8 +42,8 @@ typedef struct _PANO_INOF {
 	FRAME_FORMAT	format;								// 视频/图片标识
 } PANO_INFO;
 
-#include "CSharpInterface.h"
-#pragma comment(lib, "IVRRender.lib")
+//#include "CSharpInterface.h"
+//#pragma comment(lib, "IVRRender.lib")
 
 class CGlRender : public IRender
 {
@@ -60,9 +65,19 @@ public:
 
 protected:
 	void InitGL();
+	bool CreateHRC();
+	bool CreateGL();
+	void CreateVertices();
+	void CreateTexture();
+	bool CreateSwsCtx();
+
+	static LRESULT CALLBACK	mWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 
 private:
 	std::atomic_bool m_bClose = false;
+	HDC			m_hDC;
+	HGLRC		m_hRC;
 	HWND		m_hWnd = nullptr; // 保存窗口句柄.
 	int			m_nVideoWidth;// 视频宽.
 	int			m_nVideoHeight;// 视频高.
@@ -71,6 +86,14 @@ private:
 	RECT		m_rcLastClient;// 最后位置参数.
 	int			m_nWndWidth;// 当前宽.
 	int			m_nWndHeight;// 当前高.
+	WNDPROC		m_oldWndProc;
+	//opengl
+	Shader*		m_pShader;
+	unsigned int m_glVAO = 0;
+	unsigned int m_glVertices = 0;
+	unsigned int m_glIndices = 0;
+	unsigned int m_glTexturecoords = 0;
+	unsigned int m_texture[3] = { 0 };
 	//转换
 	int		m_nPixelFormat = AV_PIX_FMT_YUV420P;
 	SwsContext*			m_pSwsCtx = nullptr;

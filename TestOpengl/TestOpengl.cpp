@@ -6,11 +6,13 @@
 #include <atlimage.h>
 #include <Windows.h>
 #include <iostream>
-#include "stb\stb_image.h"
-//#include <filesystem.h>
-#include <shader_m.h>
+
+#include <shader.h>
+#include <camera.h>
+#include <model.h>
+
 #include <math.h>
-//#include <wingdi.h>
+#include "models.h"
 
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -36,79 +38,31 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-// timing
-float deltaTime = 0.0f;	// time between current frame and last frame
-float lastFrame = 0.0f;
-// camera
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
 
-bool firstMouse = true;
-float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
-float pitch = 0.0f;
+// camera
+Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 float lastX = 800.0f / 2.0;
 float lastY = 600.0 / 2.0;
-float fov = 45.0f;
+bool firstMouse = true;
 
+// timing
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
+// yuv
 const GLuint WIDTH = 800, HEIGHT = 600;
 const int pixel_w = 2160, pixel_h = 1080;
 unsigned char buf[pixel_w*pixel_h * 3 / 2] = { 0 };
 unsigned char *plane[3];
 
-
-#define PI 3.1415926
-
-float* verticals;
-float* UV_TEX_VERTEX;
-
-int slicesCount = 200;
-int parallelsCount = slicesCount / 2;
-int indexCount = slicesCount * parallelsCount * 6;
-int numPoint = (slicesCount + 1) * (parallelsCount + 1);
-
-short *indices = new short[indexCount];
-float *vertexs = new float[numPoint * 3];
-float *texcoords = new float[numPoint * 2];
-
-
-void getPointMatrix()
-{
-	float const step = (2.0f * PI) / (float)slicesCount;
-	float const radius = 1.0f;
-	int runCount = 0;
-	for (int i = 0; i < parallelsCount + 1; i++) {
-		for (int j = 0; j < slicesCount + 1; j++) {
-			int vertex = (i * (slicesCount + 1) + j) * 3;
-			if (vertexs) {
-				vertexs[vertex + 0] = radius * sinf(step * (float)i) * cosf(step * (float)j);
-				vertexs[vertex + 1] = radius * cosf(step * (float)i);
-				vertexs[vertex + 2] = radius * sinf(step * (float)i) * sinf(step * (float)j);
-			}
-			if (texcoords) {
-				int textureIndex = (i * (slicesCount + 1) + j) * 2;
-				texcoords[textureIndex + 0] = (float)j / (float)slicesCount;
-				texcoords[textureIndex + 1] = ((float)i / (float)parallelsCount);
-			}
-			if (indices && i < parallelsCount && j < slicesCount) {
-				indices[runCount++] = i * (slicesCount + 1) + j;
-				indices[runCount++] = (i + 1) * (slicesCount + 1) + j;
-				indices[runCount++] = (i + 1) * (slicesCount + 1) + (j + 1);
-
-				indices[runCount++] = i * (slicesCount + 1) + j;
-				indices[runCount++] = (i + 1) * (slicesCount + 1) + (j + 1);
-				indices[runCount++] = i * (slicesCount + 1) + (j + 1);
-			}
-		}
-	}
-}
-
 #define GLMatrix4DIndentity {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1}
-#define GLMatrix4DData {0.999,0.024,-0.007,0,  -0.007,0.540,0.842,0,   0.025,-0.842,0.540,0,   0,0,0.0,1}
-#define GLMatrix4DDemoData {1.2,0,0,0,0,1.7,0,0,0,0,-1.0,-1,0,0,-0.2,1}
+#define GLMatrix4DData {\
+0.999,	0.024,	-0.007,	0,  \
+-0.007,	0.540,	0.842,	0,   \
+0.025,	-0.842,	0.540,	0,   \
+0,		0,		0.0,	1}
 
 #ifdef INCLUDE_GLFW3
 int CreateGLFWWindows()
@@ -123,6 +77,7 @@ int CreateGLFWWindows()
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", NULL, NULL);
+	
 	glfwMakeContextCurrent(window);
 	if (window == NULL)
 	{
@@ -151,41 +106,14 @@ int CreateGLFWWindows()
 	// build and compile our shader zprogram
 	// ------------------------------------
 	Shader ourShader("Shader.vsh", "Shader.fsh");
-	
-	// set up vertex data (and buffer(s)) and configure vertex attributes
-	// ------------------------------------------------------------------
 
-	//float vertices[] = {
-	//	// positions         // texture coords
-	//	1.0f,  0.5f, 0.0f,		//1.0f, 0.0f, // top right
-	//	1.0f, -0.5f, 0.0f,		//1.0f, 1.0f, // bottom right
-	//	-1.0f, -0.5f, 0.0f,		//0.0f, 1.0f, // bottom left
-	//	-1.0f,  0.5f, 0.0f,		//0.0f, 0.0f  // top left 
-	//};
+	std::vector<GLfloat> vertices;
+	std::vector<GLuint> indices;
+	std::vector<GLfloat> texcoords;
 
-	//float texturecoords[] = {
-	//	// texture coords
-	//	1.0f, 0.0f, // top right
-	//	1.0f, 1.0f, // bottom right
-	//	0.0f, 1.0f, // bottom left
-	//	0.0f, 0.0f  // top left 
-	//};
-
-	//unsigned int indices[] = {
-	//	0, 1, 3, // first triangle
-	//	1, 2, 3  // second triangle
-	//};
-
-	//unsigned int indices[] = {  // note that we start from 0!
-	//	2,1,0,  // first Triangle
-	//	2,3,0   // second Triangle
-	//};
-
-	glm::vec3 cubePosition = {
-		0.0f,  0.0f,  0.0f
-	};
-
-	getPointMatrix();
+	generateSphereGeometry2(vertices, indices, texcoords);
+	//generateSphereGeometry(2.0f, vertices, indices, texcoords);
+	//generatePlaneGeometry(vertices, indices, texcoords);
 
 	unsigned int VBO, VBO2, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
@@ -194,45 +122,21 @@ int CreateGLFWWindows()
 	glGenBuffers(1, &EBO);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
 	glBindVertexArray(VAO);
-
-	/*float *vertexs = new float[numPoint * 3];
-	float *texcoords = new float[numPoint * 2];
-	short *indices = new short[indexCount * 6];*/
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(GLushort), indices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, numPoint * 3 * sizeof(GLfloat), vertexs, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-	glBufferData(GL_ARRAY_BUFFER, numPoint * 2 * sizeof(GLfloat), texcoords, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-
-	/*glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(texturecoords), texturecoords, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);*/
 	
-	//// position attribute
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	//glEnableVertexAttribArray(0);
-	//// texture coord attribute
-	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	//glEnableVertexAttribArray(1);
+	//bind vertices
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(GLfloat), texcoords.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(1);
 
 	
 	// load and create a texture 
@@ -273,7 +177,7 @@ int CreateGLFWWindows()
 	plane[0] = buf;
 	plane[1] = plane[0] + pixel_w*pixel_h;
 	plane[2] = plane[1] + pixel_w*pixel_h / 4;
-	FILE *fileYuv = _fsopen("panor_2160x1080.yuv", "rb", _SH_DENYWR);
+	FILE *fileYuv = _fsopen("..\\Debug\\panor_2160x1080.yuv", "rb", _SH_DENYWR);
 	if (!fileYuv)
 		return 0;
 
@@ -314,26 +218,22 @@ int CreateGLFWWindows()
 		// activate shader
 		ourShader.use();
 
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		// pass projection matrix to shader (note that in this case it could change every frame)
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		ourShader.setMat4("projection", projection);
-		// camera/view transformation
-		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		ourShader.setMat4("view", view);
-		/*glm::mat4 view(GLMatrix4DData);
-		ourShader.setMat4("view", view);*/
 
-		// calculate the model matrix for each object and pass it to shader before drawing
-		/*glm::mat4 model;
-		model = glm::translate(model, cubePosition);
-		float angle = 20.0f * 0;
+		glm::mat4 view = camera.GetViewMatrix();
+		ourShader.setMat4("view", view);
+
+		glm::mat4 model;
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		float angle = 0.0f;
 		model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-		ourShader.setMat4("model", model);*/
-		glm::mat4 model(GLMatrix4DDemoData);
 		ourShader.setMat4("model", model);
 
 		glBindVertexArray(VAO);
-		//glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-		glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, 0);
+		//glDrawArrays(GL_TRIANGLE_FAN, 0, indices.size());
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
 		// Swap the screen buffers
 		glfwSwapBuffers(window);
@@ -364,13 +264,13 @@ void processInput(GLFWwindow *window)
 
 	float cameraSpeed = 2.5 * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraPos += cameraSpeed * cameraFront;
+		camera.ProcessKeyboard(FORWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * cameraFront;
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		camera.ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
 // glfw: whenever the mouse moves, this callback is called
@@ -386,39 +286,18 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 	float xoffset = xpos - lastX;
 	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
 	lastX = xpos;
 	lastY = ypos;
 
-	float sensitivity = 0.1f; // change this value to your liking
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw += xoffset;
-	pitch += yoffset;
-
-	// make sure that when pitch is out of bounds, screen doesn't get flipped
-	if (pitch > 89.0f)
-		pitch = 89.0f;
-	if (pitch < -89.0f)
-		pitch = -89.0f;
-
-	glm::vec3 front;
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = sin(glm::radians(pitch));
-	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	cameraFront = glm::normalize(front);
+	camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	if (fov >= 1.0f && fov <= 45.0f)
-		fov -= yoffset;
-	if (fov <= 1.0f)
-		fov = 1.0f;
-	if (fov >= 45.0f)
-		fov = 45.0f;
+	camera.ProcessMouseScroll(yoffset);
 }
 
 int main(int argc, char** argv)

@@ -153,4 +153,8 @@
       <Filter>render</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shader.fsh" />
+    <None Include="Shader.vsh" />
+  </ItemGroup>
 </Project>

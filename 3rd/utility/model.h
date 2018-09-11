@@ -2,16 +2,16 @@
 #define MODEL_H
 
 #include <glad/glad.h> 
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
 #include <stb_image.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include <Importer.hpp>
+#include <scene.h>
+#include <postprocess.h>
 
-#include <learnopengl/mesh.h>
-#include <learnopengl/shader.h>
+#include <mesh.h>
+#include <shader.h>
 
 #include <string>
 #include <fstream>
@@ -199,7 +199,6 @@ private:
         return textures;
     }
 };
-
 
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma)
 {

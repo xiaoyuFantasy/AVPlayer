@@ -45,8 +45,6 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	if (m_pDecoder)
 		m_pDecoder->Init(m_pCodecCtx);
 
-	if (m_pRender)
-		m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? m_pCodecCtx->pix_fmt : AV_PIX_FMT_NV12);
 	av_log(NULL, AV_LOG_INFO, "Create Decoder");
 	m_queueFrame.Init();
 	m_queuePacket.Init();
@@ -252,6 +250,8 @@ void CVideoPlayer::RenderThread()
 {
 	m_threadRender = std::thread([&]() {
 		av_log(NULL, AV_LOG_INFO, "Video Render Thread");
+		if (m_pRender)
+			m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? m_pCodecCtx->pix_fmt : AV_PIX_FMT_NV12);
 		while (!m_bStopRender && !m_bQuit)
 		{
 			if (m_bPause)

@@ -2,7 +2,7 @@
 #define SHADER_H
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 #include <string>
 #include <fstream>
@@ -162,6 +162,11 @@ public:
     {
         glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
+	// ------------------------------------------------------------------------
+	GLuint getUniform(const std::string &name) const
+	{
+		return glGetUniformLocation(ID, name.c_str());
+	}
 
 private:
     // utility function for checking shader compilation/linking errors.

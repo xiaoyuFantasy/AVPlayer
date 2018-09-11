@@ -1,7 +1,5 @@
 ﻿  GlRender.cpp
-  正在生成代码...
-  正在编译...
-  RenderFactory.cpp
-  正在生成代码...
+e:\mygithub\avplayer\3rd\utility\shader.h(65): warning C4101: “infoLog”: 未引用的局部变量
+e:\mygithub\avplayer\3rd\utility\shader.h(64): warning C4101: “success”: 未引用的局部变量
   AVPlayerCore.vcxproj -> E:\MyGitHub\AVPlayer\Debug\AVPlayerCore.dll
   AVPlayerCore.vcxproj -> E:\MyGitHub\AVPlayer\Debug\AVPlayerCore.pdb (Full PDB)

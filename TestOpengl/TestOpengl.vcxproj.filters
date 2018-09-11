@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="std">
-      <UniqueIdentifier>{5434b8db-ab17-4ddc-82c1-7faae30d1305}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -33,8 +30,8 @@
     <ClInclude Include="TestOpengl.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="stb\stb_image.h">
-      <Filter>std</Filter>
+    <ClInclude Include="models.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -43,9 +40,6 @@
     </ClCompile>
     <ClCompile Include="TestOpengl.cpp">
       <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="stb\stb_image.cpp">
-      <Filter>std</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
