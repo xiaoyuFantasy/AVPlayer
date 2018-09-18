@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Window size="400, 240" roundcorner="2,2" caption="0,0,0,30">
+    <Font name="微软雅黑" size="16" id="1" bold="false" />
+    <VerticalLayout>
+        <!-- 标题栏 -->
+        <HorizontalLayout height="30" bkcolor="0xFF101724">
+            <HorizontalLayout padding="12,0,0,0" width="250">
+                <Label padding="0,0,0,0" text="路径选择" textcolor="0xFFEDECEC" font="1" align="left" valign="vcenter" />
+            </HorizontalLayout>
+            <Label></Label>
+            <HorizontalLayout width="36">
+                <Button name="closebtn" 
+                    tooltip="关闭" 
+                    width="36" 
+                    height="30" 
+                    bkimage="file='image\button\btn_minmax.png' source='90,0,105,15' dest='11,8,26,23' "
+                    hotimage="file='image\button\btn_style_close.png' source='36,0,72,30'" 
+                    pushedimage="file='image\button\btn_style_close.png' source='72,0,108,30'" />
+            </HorizontalLayout>
+        </HorizontalLayout>
+        <!-- 客户区 -->
+        <VerticalLayout bkcolor="0xFF28354E">
+            <HorizontalLayout padding="0,60,0,0" height="30" >
+                <Label padding="10,0,0,0" text="路径 :" textcolor="0xFFEDECEC" font="1" align="center" valign="vcenter" width="40" />
+                <Edit name="edit_path" padding="20,0,0,0" />
+                <Button name="btn_browse" padding="10,0,10,0" text="浏览" textcolor="0xFFEDECEC" bkcolor="0xFF2782dc" width="30" height="30" />
+            </HorizontalLayout>
+            <Control />
+            <HorizontalLayout height="60">
+                <Control />
+                <Button name="btn_ok" padding="0,10,0,20" text="确定" textcolor="0xFFEDECEC" bkcolor="0xFF2782dc" width="88" height="28" />
+                <Button name="btn_cancel" padding="24,10,0,20" text="取消" textcolor="0xFFEDECEC" bkcolor="0xFF2782dc" width="88" height="28" />
+                <Control />
+            </HorizontalLayout>
+        </VerticalLayout>
+    </VerticalLayout>
+</Window>

@@ -87,32 +87,12 @@ void generateSphereGeometry2(std::vector<GLfloat>& vertices, std::vector<GLuint>
 	for (int i = 0; i < parallelsCount + 1; i++) {
 		for (int j = 0; j < slicesCount + 1; j++) {
 			int vertex = (i * (slicesCount + 1) + j) * 3;
-			/*if (vertexBufferData) {
-				vertexBufferData[vertex + 0] = radius * sinf(step * (float)i) * cosf(step * (float)j);
-				vertexBufferData[vertex + 1] = radius * cosf(step * (float)i);
-				vertexBufferData[vertex + 2] = radius * sinf(step * (float)i) * sinf(step * (float)j);
-			}*/
 			vertices.push_back(radius * sinf(step * (float)i) * cosf(step * (float)j));
 			vertices.push_back(radius * cosf(step * (float)i));
 			vertices.push_back(radius * sinf(step * (float)i) * sinf(step * (float)j));
 
-			/*if (textureBufferData) {
-				
-				textureBufferData[textureIndex + 0] = (float)j / (float)slicesCount;
-				textureBufferData[textureIndex + 1] = ((float)i / (float)parallelsCount);
-			}*/
 			texcoords.push_back((float)j / (float)slicesCount);
 			texcoords.push_back(((float)i / (float)parallelsCount));
-
-			/*if (indexBufferData && i < parallelsCount && j < slicesCount) {
-				indexBufferData[runCount++] = i * (slicesCount + 1) + j;
-				indexBufferData[runCount++] = (i + 1) * (slicesCount + 1) + j;
-				indexBufferData[runCount++] = (i + 1) * (slicesCount + 1) + (j + 1);
-
-				indexBufferData[runCount++] = i * (slicesCount + 1) + j;
-				indexBufferData[runCount++] = (i + 1) * (slicesCount + 1) + (j + 1);
-				indexBufferData[runCount++] = i * (slicesCount + 1) + (j + 1);
-			}*/
 
 			if (i < parallelsCount && j < slicesCount) {
 				indices.push_back(i * (slicesCount + 1) + j);
@@ -123,7 +103,6 @@ void generateSphereGeometry2(std::vector<GLfloat>& vertices, std::vector<GLuint>
 				indices.push_back((i + 1) * (slicesCount + 1) + (j + 1));
 				indices.push_back(i * (slicesCount + 1) + (j + 1));
 			}
-			
 		}
 	}
 }
@@ -191,7 +170,7 @@ void generateSphereGeometry(GLfloat radius, std::vector<GLfloat>& vertices, std:
 			}
 
 			texcoords.push_back((GLfloat)j / VERTICAL_SLICE);
-			texcoords.push_back(1 - (GLfloat)i / HORIZONTAL_SLICE);
+			texcoords.push_back((GLfloat)i / HORIZONTAL_SLICE);
 		}
 	}
 }

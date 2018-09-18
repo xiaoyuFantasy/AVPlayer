@@ -3,9 +3,13 @@
 #include <string>
 #include "../AVPlayerCore/AVPlayerDefine.h"
 
+// 初始化
 typedef void(*funcInit)();
+// 反初始化
 typedef void(*funcUnInit)();
+// 创建
 typedef HANDLE(*funcCreatePlayer)();
+// 销毁
 typedef void(*funcDestoryPlayer)(HANDLE handle);
 // 打开一个媒体文件
 typedef bool(*funcOpen)(HANDLE handle, PLAYER_OPTS &opts, bool bSync);
@@ -17,6 +21,8 @@ typedef void(*funcPause)(HANDLE handle);
 typedef void(*funcResume)(HANDLE handle);
 // 停止播放.
 typedef void(*funcStop)(HANDLE handle);
+// 设置模型
+typedef void(*funcSetRenderMode)(HANDLE handle, RENDER_MODE mode);
 // 播放状态
 typedef PLAY_STATUS (*funcStatus)(HANDLE handle);
 // 等待播放直到完成.
@@ -39,3 +45,9 @@ typedef double(*funcDuration)(HANDLE handle);
 typedef void(*funcVideoSize)(HANDLE handle, int width, int height);
 // 当前缓冲进度, 单位百分比.
 typedef double(*funcBuffering)(HANDLE handle);
+// 设置缩放
+typedef void(*funcSetScale)(HANDLE handle, float);
+// 设置旋转
+typedef void(*funcSetRotate)(HANDLE handle, double, double);
+// 设置滚动
+typedef void (*funcSetScroll)(HANDLE handle, double, double);

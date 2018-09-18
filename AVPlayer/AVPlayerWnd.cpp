@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "AVPlayerWnd.h"
-#include "FileDialogEx.h"
 #include <atlconv.h>
 #include <Shellapi.h>
 #pragma comment(lib, "Shell32.lib")
+
 
 std::wstring StringToWString(const std::string &str)
 {
@@ -19,9 +19,6 @@ std::string WStringToString(const std::wstring &wstr)
 	std::copy(wstr.begin(), wstr.end(), str.begin());
 	return str;
 }
-
-#define PLAYER_MSG_DURATION (WM_USER + 1)
-#define PLAYER_MSG_PROGRESS (WM_USER + 2)
 
 CAVPlayerWnd::CAVPlayerWnd()
 {
@@ -53,7 +50,8 @@ CControlUI * CAVPlayerWnd::CreateControl(LPCTSTR pstrClass)
 	{
 		CWndUI *pUI = new CWndUI;
 		m_pVideo = new CVideoWnd;
-		m_pVideo->Create(m_hWnd, L"VidaoPanel", UI_WNDSTYLE_CHILD, UI_CLASSSTYLE_CHILD);
+		m_pVideo->SetCmdLine(m_mapCmd);
+		m_pVideo->Create(m_hWnd, L"VidaoPanel", UI_WNDSTYLE_CHILD, NULL);
 		pUI->Attach(m_pVideo->GetHWND());
 		return pUI;
 	}
@@ -68,6 +66,7 @@ void CAVPlayerWnd::OnFinalMessage(HWND hWnd)
 
 void CAVPlayerWnd::InitWindow()
 {
+	
 	m_pVideoLayout = (CWndUI*)m_PaintManager.FindControl(L"video_player");
 	m_pLabelName = (CLabelUI*)m_PaintManager.FindControl(L"video_name");
 	m_pSliderPlay = (CSliderUI*)m_PaintManager.FindControl(L"sliderPlay");
@@ -87,13 +86,8 @@ void CAVPlayerWnd::InitWindow()
 		m_opts.hInstance = m_PaintManager.GetInstance();
 		m_opts.funcEvent = CAVPlayerWnd::FuncPlayerEvent;
 	}
+}
 
-	ParseCmdLine(GetCommandLineW(), m_mapCmd);
-	auto itor = m_mapCmd.find(L"/spath");
-	if (itor != m_mapCmd.end())
-	{
-		OnFileSelected(true, itor->second);
-	}}
 
 void CAVPlayerWnd::Notify(TNotifyUI & msg)
 {
@@ -101,35 +95,42 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 	{
 		if (_tcscmp(msg.pSender->GetName(), _T("btnPlay")) == 0)
 		{
-			/*if (m_pVideo->m_funcStatus(m_pVideo->m_hPlayer) == PlayingStatus)
+			if (m_pSettingDlg && ::IsWindow(m_pSettingDlg->GetHWND()))
 			{
-				m_pVideo->m_funcPause(m_pVideo->m_hPlayer);
-				m_pBtnPlay->SetVisible(false);
-				m_pBtnPause->SetVisible();
+				SetForegroundWindow(m_pSettingDlg->GetHWND());
 			}
-			else*/
+			else
 			{
-				std::wstring file_type = L"文件格式";
-				LPCTSTR filter = L"*.mp4;*.mp3;*.avi;*.3g2;*.3gp;*.dvd;*.flv;*.hls;";
-				std::map<LPCTSTR, LPCTSTR> filters;
-				filters[file_type.c_str()] = filter;
-				CFileDialogEx* file_dlg = new CFileDialogEx();
-				file_dlg->SetFilter(filters);
-				file_dlg->SetMultiSel(TRUE);
-				file_dlg->SetParentWnd(m_hWnd);
-				file_dlg->ShowOpenFileDlg(std::bind(&CAVPlayerWnd::OnFileSelected, this, std::placeholders::_1, std::placeholders::_2));
-				delete file_dlg;
-			}
-			
+				m_pSettingDlg.reset();
+				m_pSettingDlg = std::make_shared<CSettingDialog>();
+				m_pSettingDlg->SetCallback([&](std::wstring wstrPath) {
+					wchar_t szUrl[MAX_PATH + 1] = { 0 };
+					_tcscpy_s(szUrl, MAX_PATH, wstrPath.c_str());
+					::PathStripPath(szUrl);
+					m_pLabelName->SetText(szUrl);
+					m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
+					//m_opts.bEnableAudio = false;
+					//m_opts.bEnableVideo = false;
+					//m_opts.bGpuDecode = true;
+					m_opts.strPath = CW2A(wstrPath.c_str(), CP_UTF8);
+					//m_opts.hWnd = ::CreateWindowEx(WS_EX_APPWINDOW, L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 0, 0, 400, 300, nullptr, nullptr, m_PaintManager.GetInstance(), nullptr);
+					//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
+					//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
+					//m_opts.strPath = "rtmp://192.168.1.32:1935/live/32";
+					m_pVideo->m_funcOpen(m_pVideo->m_hPlayer, m_opts, true);
+					m_pBtnPlay->SetVisible(false);
+					m_pBtnPause->SetVisible();
+					m_pBtnStop->SetEnabled();
+					m_pVideoLayout->SetVisible();
+				});
+				m_pSettingDlg->Create(m_hWnd, L"SettingDialog", UI_WNDSTYLE_DIALOG, UI_WNDSTYLE_EX_DIALOG);
+				m_pSettingDlg->CenterWindow();
+				m_pSettingDlg->ShowWindow();
+			}			
 		}
-		else if (_tcscmp(msg.pSender->GetName(), _T("btnPause")) == 0)
+		else if (_tcscmp(msg.pSender->GetName(), _T("btnRenderMode")) == 0)
 		{
-			/*if (m_pVideo->m_funcIsPlaying(m_pVideo->m_hPlayer))
-			{
-				m_pVideo->m_funcPause(m_pVideo->m_hPlayer, true);
-				m_pBtnPlay->SetVisible();
-				m_pBtnPause->SetVisible(false);
-			}*/
+			m_pVideo->m_funcSetRenderMode(m_pVideo->m_hPlayer, RENDER_MODE::STANDARD);
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnStop")) == 0)
 		{
@@ -181,6 +182,11 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 	__super::Notify(msg);
 }
 
+void CAVPlayerWnd::SetCmdLine(std::map<std::wstring, std::wstring>& mapCmd)
+{
+	m_mapCmd = mapCmd;
+}
+
 LRESULT CAVPlayerWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHandled)
 {
 	if (uMsg == PLAYER_MSG_DURATION)
@@ -193,26 +199,10 @@ LRESULT CAVPlayerWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lPara
 	{
 		m_pSliderPlay->SetValue(wParam);
 	}
-	else if (uMsg == WM_MOUSEWHEEL)
-	{
-		int fwKeys = GET_KEYSTATE_WPARAM(wParam);
-		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		if (zDelta < 0)
-			m_scale += 0.1f;
-		else
-			m_scale -= 0.1f;
+	else if (uMsg == PLAYER_MSG_PLAY)
+		m_pVideo->m_funcPlay(m_pVideo->m_hPlayer);
 
-		if (m_scale < 0.5f)
-			m_scale = 0.5f;
-
-		if (m_scale > 1.5f)
-			m_scale = 1.5f;
-
-		//m_pVideo->m_funcSetPanoScale(m_pVideo->m_hPlayer, m_scale);
-		/*int xPos = LOWORD(lParam);
-		int yPos = HIWORD(lParam);
-		player.m_funcSetPanoRotate(player.m_hPlayer, m_xCurrPos, m_yCurrPos);*/
-	}
+	
 	return __super::HandleCustomMessage(uMsg, wParam, lParam, bHandled);
 }
 
@@ -242,11 +232,11 @@ int CAVPlayerWnd::ParseCmdLine(const wchar_t * lpCmdLine, std::map<std::wstring,
 	return 0;
 }
 
-void CAVPlayerWnd::FuncPlayerEvent(const PLAYER_EVENT e, void * data)
+void CAVPlayerWnd::FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T *pData)
 {
-	CAVPlayerWnd * pAvPlayer = (CAVPlayerWnd*)data;
+	CAVPlayerWnd * pAvPlayer = (CAVPlayerWnd*)user_data;
 	if (PlayerOpening == e)
-		pAvPlayer->m_pVideo->m_funcPlay(pAvPlayer->m_pVideo->m_hPlayer);
+		::PostMessage(pAvPlayer->GetHWND(), PLAYER_MSG_PLAY, (WPARAM)0, (LPARAM)0);
 }
 
 void CAVPlayerWnd::DurationCallback(void * userdata, int64_t duration)
@@ -272,28 +262,29 @@ void CAVPlayerWnd::ErrorCallback(void * userdata, int err, std::string strMsg)
 {
 }
 
-void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
-{
-	if (bRet && !filePath.empty())
-	{
-		wchar_t szUrl[MAX_PATH + 1] = { 0 };
-		_tcscpy_s(szUrl, MAX_PATH, filePath.c_str());
-		::PathStripPath(szUrl);
-		m_pLabelName->SetText(szUrl);
-		m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
-		//m_opts.bEnableAudio = false;
-		//m_opts.bEnableVideo = false;
-		m_opts.bGpuDecode = false;
-		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
-		//m_opts.hWnd = ::CreateWindowEx(WS_EX_APPWINDOW, L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 0, 0, 400, 300, nullptr, nullptr, m_PaintManager.GetInstance(), nullptr);
-		//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
-		//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
-		//m_opts.strPath = "rtmp://192.168.1.32:1935/live/32";
-		m_pVideo->m_funcOpen(m_pVideo->m_hPlayer, m_opts, true);
-		m_pBtnPlay->SetVisible(false);
-		m_pBtnPause->SetVisible();
-		m_pBtnStop->SetEnabled();
-		m_pVideoLayout->SetVisible();
-	}
-}
+//void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
+//{
+//	if (bRet && !filePath.empty())
+//	{
+//		wchar_t szUrl[MAX_PATH + 1] = { 0 };
+//		_tcscpy_s(szUrl, MAX_PATH, filePath.c_str());
+//		::PathStripPath(szUrl);
+//		m_pLabelName->SetText(szUrl);
+//		m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
+//		//m_opts.bEnableAudio = false;
+//		//m_opts.bEnableVideo = false;
+//		//m_opts.bGpuDecode = true;
+//		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
+//		//m_opts.hWnd = ::CreateWindowEx(WS_EX_APPWINDOW, L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 0, 0, 400, 300, nullptr, nullptr, m_PaintManager.GetInstance(), nullptr);
+//		//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
+//		//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
+//		//m_opts.strPath = "rtmp://192.168.1.32:1935/live/32";
+//		m_pVideo->m_funcOpen(m_pVideo->m_hPlayer, m_opts, true);
+//		m_pBtnPlay->SetVisible(false);
+//		m_pBtnPause->SetVisible();
+//		m_pBtnStop->SetEnabled();
+//		m_pVideoLayout->SetVisible();
+//	}
+//}
+
 

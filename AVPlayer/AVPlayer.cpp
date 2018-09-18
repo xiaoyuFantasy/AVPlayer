@@ -4,6 +4,8 @@
 #include "stdafx.h"
 #include "AVPlayer.h"
 #include "AVPlayerWnd.h"
+#include <Shellapi.h>
+#pragma comment(lib, "Shell32.lib")
 
 wstring GetSkinPath(LPCTSTR lpszFolderName = nullptr)
 {
@@ -13,7 +15,7 @@ wstring GetSkinPath(LPCTSTR lpszFolderName = nullptr)
 #ifdef _DEBUG
 	PathAppend(szPath, L"..\\skin");
 #else	
-	PathAppend(szPath, L"..\\skin");
+	PathAppend(szPath, L"skin");
 #endif // DEBUG
 	if (lpszFolderName)
 	{
@@ -22,6 +24,30 @@ wstring GetSkinPath(LPCTSTR lpszFolderName = nullptr)
 	}
 	PathAddBackslash(szPath);
 	return szPath;
+}
+
+int ParseCmdLine(const wchar_t * lpCmdLine, std::map<std::wstring, std::wstring>& pMapCmdLine)
+{
+	int nArgs = 0;
+	LPWSTR * szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
+	for (int i = 0; i < nArgs; i++)
+	{
+		if (wcsncmp(L"//", szArglist[i], 1) != 0)
+			continue;
+
+		if (i + 1 < nArgs) //结束  
+		{
+			if (wcsncmp(L"//", szArglist[i + 1], 1) != 0)
+			{
+				pMapCmdLine.insert(std::make_pair(szArglist[i], szArglist[i + 1]));
+				i++;
+				continue;
+			}
+		}
+		pMapCmdLine.insert(std::make_pair(szArglist[i], L"1"));
+	}
+	LocalFree(szArglist);
+	return 0;
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -35,12 +61,36 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // TODO: 在此放置代码。
 	CPaintManagerUI::SetInstance(hInstance);
 	CPaintManagerUI::SetResourcePath(GetSkinPath().c_str());
-   
-	CAVPlayerWnd player;
-	player.Create(NULL, L"AVPlayer", UI_WNDSTYLE_FRAME, UI_WNDSTYLE_EX_FRAME);
-	player.CenterWindow();
-	player.ShowWindow();
 
+	std::map<std::wstring, std::wstring>	mapCmd;
+	ParseCmdLine(GetCommandLineW(), mapCmd);
+
+	auto itor = mapCmd.find(L"/is_child_wnd");
+	if (itor != mapCmd.end() && itor->second.compare(L"true") == 0)
+	{
+		auto wndName = mapCmd.find(L"/wnd_name");
+		if (wndName != mapCmd.end())
+		{
+			CVideoWnd* pVideoWnd = new CVideoWnd();
+			pVideoWnd->SetCmdLine(std::move(mapCmd));
+			pVideoWnd->Create(nullptr, wndName->second.c_str(), WS_POPUP, UI_WNDSTYLE_EX_DIALOG);
+			pVideoWnd->ShowModal();
+		}
+	}
+	else
+	{
+		/*CVideoWnd* pVideoWnd = new CVideoWnd();
+		pVideoWnd->Create(nullptr, L"AVPlayer", UI_WNDSTYLE_DIALOG, UI_WNDSTYLE_EX_DIALOG, 0, 0, 500, 500);
+		pVideoWnd->CenterWindow();
+		pVideoWnd->ShowModal();*/
+
+		CAVPlayerWnd player;
+		player.SetCmdLine(mapCmd);
+		player.Create(NULL, L"AVPlayer", UI_WNDSTYLE_FRAME, UI_WNDSTYLE_EX_FRAME);
+		player.CenterWindow();
+		player.ShowModal();
+	}
+	
 	CPaintManagerUI::MessageLoop();
     return 0;
 }

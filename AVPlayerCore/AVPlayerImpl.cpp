@@ -17,6 +17,7 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 	if (m_bOpened || m_bOpening)
 		return false;
 
+	m_bStop = false;
 	m_opts = opts;
 	m_bOpening = true;
 	m_threadOpen = std::thread([&]() {
@@ -35,8 +36,20 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 		{
 			m_pFormatCtx->probesize = 1 * 1024 * (nIndex + 1);
 			ret = avformat_open_input(&m_pFormatCtx, m_opts.strPath.c_str(), nullptr, nullptr);
-			if (ret != AVERROR_BUFFER_TOO_SMALL)
+			if (ret == 0)
 				break;
+			else if (ret == AVERROR_BUFFER_TOO_SMALL)
+			{
+				av_log(NULL, AV_LOG_ERROR, "avformat_open_input. failed!!! buffer too small ");
+				continue;
+			}
+			else
+			{
+				char szErr[AV_ERROR_MAX_STRING_SIZE];
+				av_strerror(ret, szErr, AV_ERROR_MAX_STRING_SIZE);
+				av_log(NULL, AV_LOG_ERROR, "avformat_open_input. err_code:%d, msg:%s", ret, szErr);
+				break;
+			}
 		}
 
 		if (ret != 0)
@@ -98,17 +111,6 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 				m_duration = m_pFormatCtx->streams[m_nVideoIndex]->duration * av_q2d(m_pFormatCtx->streams[m_nVideoIndex]->time_base);
 			else
 				m_duration = m_pFormatCtx->streams[m_nAudioIndex]->duration * av_q2d(m_pFormatCtx->streams[m_nAudioIndex]->time_base);
-		}
-
-		{
-			int hours, mins, secs, us;
-			secs = m_duration / AV_TIME_BASE;
-			us = m_duration % AV_TIME_BASE;
-			av_log(NULL, AV_LOG_INFO, "duration: %ld, seconds: %ld", m_duration, secs);
-			mins = secs / 60;
-			secs %= 60;
-			hours = mins / 60;
-			mins %= 60;
 		}
 
 		m_bOpened = true;
@@ -193,7 +195,6 @@ bool CAVPlayerImpl::Play()
 		m_bPlaying = false;
 	});
 
-	m_threadPlay.detach();
 	return true;
 }
 
@@ -216,6 +217,12 @@ void CAVPlayerImpl::Stop()
 	Close();
 }
 
+void CAVPlayerImpl::SetRenderMode(RENDER_MODE mode)
+{
+	if (m_bVideoOpen && m_pRender)
+		m_pRender->SetRenderMode(mode);
+}
+
 PLAY_STATUS CAVPlayerImpl::Status()
 {
 	return m_statusPlayer;
@@ -223,8 +230,8 @@ PLAY_STATUS CAVPlayerImpl::Status()
 
 bool CAVPlayerImpl::WaitForCompletion()
 {
-	while (m_statusPlayer != CloseStatus)
-		av_usleep(10000);
+	while (m_statusPlayer != NoneStatus)
+		av_usleep(1000);
 
 	return true;
 }
@@ -247,7 +254,11 @@ void CAVPlayerImpl::Close()
 	if (m_pFormatCtx)
 		avformat_free_context(m_pFormatCtx);
 
-	m_statusPlayer = CloseStatus;
+	m_statusPlayer = NoneStatus;
+	m_bOpened = false;
+
+	if (m_opts.funcEvent)
+		m_opts.funcEvent(m_opts.user_data, PlayerClosed, nullptr);
 }
 
 void CAVPlayerImpl::SeekTo(double fact)
@@ -292,6 +303,18 @@ double CAVPlayerImpl::Buffering()
 	return 0.0;
 }
 
+void CAVPlayerImpl::SetScale(float factor)
+{
+	if (m_bVideoOpen && m_pRender)
+		m_pRender->SetScale(factor);
+}
+
+void CAVPlayerImpl::SetRotate(double xoffset, double yoffset)
+{
+	if (m_bVideoOpen && m_pRender)
+		m_pRender->SetRotate(xoffset, yoffset);
+}
+
 int CAVPlayerImpl::interrupt_callback(void * lparam)
 {
 	CAVPlayerImpl *p = (CAVPlayerImpl*)lparam;
@@ -303,7 +326,5 @@ int CAVPlayerImpl::interrupt_callback(void * lparam)
 void CAVPlayerImpl::OnOpen(bool IsHasAuido, bool IsHasVideo)
 {
 	if (m_opts.funcEvent)
-	{
-		m_opts.funcEvent(PlayerOpening, m_opts.user_data);
-	}
+		m_opts.funcEvent(m_opts.user_data, PlayerOpening, nullptr);
 }

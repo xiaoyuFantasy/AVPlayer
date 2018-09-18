@@ -64,6 +64,8 @@ void CAudioPlayer::Close()
 	m_queuePacket.Quit();
 	if (m_pCodecCtx)
 		avcodec_free_context(&m_pCodecCtx);
+	
+	m_bOpen = false;
 }
 
 double CAudioPlayer::GetClock()

@@ -1,7 +1,15 @@
 #pragma once
 #include "AVPlayerInterface.h"
+#include "ipc/ipc_listener.h"
+#include "ipc/ipc_endpoint.h"
 
-class CVideoWnd : public WindowImplBase
+#ifdef DEBUG
+#pragma comment(lib, "ipc_d.lib")
+#else
+#pragma comment(lib, "ipc.lib")
+#endif // DEBUG
+
+class CVideoWnd : public WindowImplBase, public IPC::Listener
 {
 public:
 	CVideoWnd();
@@ -15,14 +23,32 @@ public:
 	void InitWindow();
 	void Notify(TNotifyUI &msg);
 
+	void SetCmdLine(std::map<std::wstring, std::wstring> &mapCmd);
+	void Play();
+	void Stop();
+
+	bool OnMessageReceived(IPC::Message* msg);
+	void OnChannelConnected(int32 peer_pid);
+	void OnChannelError();
+
 protected:
-	virtual LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	virtual LRESULT OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	virtual LRESULT OnMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	virtual LRESULT OnMoving(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnMoving(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	void ResizeVideo();
 
+protected:
+	void ParseCommandLine();
+	void InitIPC();
+	void Send(const std::string& cmd);
+	static void FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T *pData);
+
 public:
+	PLAYER_OPTS		m_opts;
+	std::map<std::wstring, std::wstring> m_mapCmd;
 	HMODULE			m_hPlayerModule = NULL;
 	funcInit		m_funcInit = nullptr;
 	funcUnInit		m_funcUnInit = nullptr;
@@ -44,6 +70,23 @@ public:
 	funcDuration		m_funcDuration = nullptr;
 	funcVideoSize		m_funcVideoSize = nullptr;
 	funcBuffering		m_funcBuffering = nullptr;
+	funcSetScale		m_funcSetScale = nullptr;
+	funcSetRotate		m_funcSetRotate = nullptr;
+	funcSetRenderMode	m_funcSetRenderMode = nullptr;
 	HANDLE				m_hPlayer = nullptr;
+
+	bool	m_bLButtonDown = false;
+	int		m_xPos = 0;
+	int		m_yPos = 0;
+
+	//cmd args
+	bool	m_bChildWnd = false;
+	int		m_nVideoType = 1;
+	int		m_nIndex = 0;
+	std::wstring m_wstrPlayUrl;
+	std::wstring m_wstrChannelName;
+
+	//ipc
+	std::shared_ptr<IPC::Endpoint> m_pEndpoint;
 };
 

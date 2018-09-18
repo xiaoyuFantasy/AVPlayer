@@ -30,3 +30,8 @@ using namespace DuiLib;
 #else
 #   pragma comment(lib, "..\\Release\\DuiLib.lib")
 #endif
+
+#define PLAYER_MSG_DURATION (WM_USER + 1)
+#define PLAYER_MSG_PROGRESS (WM_USER + 2)
+#define PLAYER_MSG_PLAY		(WM_USER + 3)
+#define PLAYER_MSG_OPEN		(WM_USER + 4)

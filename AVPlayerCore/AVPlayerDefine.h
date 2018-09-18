@@ -18,6 +18,7 @@ enum PLAYER_EVENT
 	PlayerForward,
 	PlayerBackward,
 	PlayerPositionChanged,
+	PlayerRenderFrame,
 	PlayerClosed,
 };
 
@@ -53,6 +54,13 @@ typedef struct PLAYER_EVENT_T
 		{
 			double pos;
 		};
+		struct PlayerFrame
+		{
+			int nPixelFormat;
+			int nWidth;
+			int nHeight;
+			unsigned char** ppData;
+		};
 	};
 };
 
@@ -64,7 +72,7 @@ enum PLAY_STATUS
 	PausedStatus,
 	CompletedStatus, 
 	StopedStatus,
-	CloseStatus,
+	//CloseStatus,
 };
 
 enum VIDEO_TYPE
@@ -79,7 +87,14 @@ enum DECODE_TYPE
 	GPU_DECODE,
 };
 
-typedef void(*FuncPlayerEvent)(const PLAYER_EVENT e, void *data);
+enum RENDER_MODE {
+	PANO2D = 0,		// 普通2D播放模式
+	STANDARD = 1,	// 球形全景播放模式
+	FISH_EYE = 2,	// 鱼眼播放模式
+	STEREO = 3,		// 小行星播放模式
+};
+
+typedef void(*FuncPlayerEvent)(void *user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T *pData);
 
 typedef struct _PLAYER_OPTS
 {

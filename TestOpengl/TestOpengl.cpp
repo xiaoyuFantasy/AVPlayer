@@ -57,13 +57,6 @@ const int pixel_w = 2160, pixel_h = 1080;
 unsigned char buf[pixel_w*pixel_h * 3 / 2] = { 0 };
 unsigned char *plane[3];
 
-#define GLMatrix4DIndentity {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1}
-#define GLMatrix4DData {\
-0.999,	0.024,	-0.007,	0,  \
--0.007,	0.540,	0.842,	0,   \
-0.025,	-0.842,	0.540,	0,   \
-0,		0,		0.0,	1}
-
 #ifdef INCLUDE_GLFW3
 int CreateGLFWWindows()
 {
@@ -77,6 +70,10 @@ int CreateGLFWWindows()
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", NULL, NULL);
+	HWND hMainWnd = ::CreateWindowEx(WS_EX_APPWINDOW, L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 0, 0, 400, 300, nullptr, nullptr, nullptr, nullptr);
+ 	HWND hWnd = ::FindWindow(L"GLFW30", L"LearnOpenGL");
+	//::SetWindowLong(hWnd, GWL_STYLE, WS_CHILD);
+	::SetParent(hWnd, hMainWnd);
 	
 	glfwMakeContextCurrent(window);
 	if (window == NULL)
@@ -87,10 +84,10 @@ int CreateGLFWWindows()
 	}
 
 	// Set the required callback functions
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	/*glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);*/
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -111,9 +108,9 @@ int CreateGLFWWindows()
 	std::vector<GLuint> indices;
 	std::vector<GLfloat> texcoords;
 
-	generateSphereGeometry2(vertices, indices, texcoords);
+	//generateSphereGeometry2(vertices, indices, texcoords);
 	//generateSphereGeometry(2.0f, vertices, indices, texcoords);
-	//generatePlaneGeometry(vertices, indices, texcoords);
+	generatePlaneGeometry(vertices, indices, texcoords);
 
 	unsigned int VBO, VBO2, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
@@ -219,17 +216,25 @@ int CreateGLFWWindows()
 		ourShader.use();
 
 		// pass projection matrix to shader (note that in this case it could change every frame)
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		ourShader.setMat4("projection", projection);
+		{
+			glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+			ourShader.setMat4("projection", projection);
+			glm::mat4 view = camera.GetViewMatrix();
+			ourShader.setMat4("view", view);
+			glm::mat4 model;
+			model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+			float angle = 0.0f;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			ourShader.setMat4("model", model);
+		}
 
-		glm::mat4 view = camera.GetViewMatrix();
-		ourShader.setMat4("view", view);
-
-		glm::mat4 model;
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-		float angle = 0.0f;
-		model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-		ourShader.setMat4("model", model);
+		{
+			glm::mat4 projection(0.1);
+			ourShader.setMat4("projection", projection);
+			ourShader.setMat4("view", projection);
+			ourShader.setMat4("model", projection);
+		}
+		
 
 		glBindVertexArray(VAO);
 		//glDrawArrays(GL_TRIANGLE_FAN, 0, indices.size());
@@ -297,6 +302,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
+	printf("%f\n", yoffset);
 	camera.ProcessMouseScroll(yoffset);
 }
 

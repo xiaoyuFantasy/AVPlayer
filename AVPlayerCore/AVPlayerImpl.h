@@ -25,6 +25,8 @@ public:
 	// 停止播放.
 	void Stop();
 
+	void SetRenderMode(RENDER_MODE mode);
+
 	// 播放状态.
 	PLAY_STATUS Status();
 
@@ -58,6 +60,12 @@ public:
 	// 当前缓冲进度, 单位百分比.
 	double Buffering();
 
+	//video scale
+	void SetScale(float factor);
+
+	//video scroll
+	void SetRotate(double xoffset, double yoffset);
+
 protected:
 	static int interrupt_callback(void * lparam);
 	void OnOpen(bool IsHasAuido, bool IsHasVideo);
@@ -66,7 +74,7 @@ private:
 	PLAYER_OPTS		m_opts;
 	AVFormatContext*	m_pFormatCtx = nullptr;
 	int64_t				m_duration = 0;
-	std::atomic<PLAY_STATUS> m_statusPlayer;
+	std::atomic<PLAY_STATUS> m_statusPlayer = PLAY_STATUS::NoneStatus;
 	std::thread			m_threadOpen;
 	std::thread			m_threadPlay;
 	std::atomic_bool	m_bOpened = false;

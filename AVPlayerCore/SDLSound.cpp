@@ -90,6 +90,7 @@ bool CSDLSound::CloseAudio()
 {
 	SDL_CloseAudioDevice(m_audioDevID);
 	m_bPlaying = false;
+	m_bOpen = false;
 	return true;
 }
 

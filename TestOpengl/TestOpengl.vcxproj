@@ -87,12 +87,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../3rd/glad/include/;../3rd/glfw/include/;../3rd/cv/include/;../3rd/glm/;../3rd/utility/;../3rd/assimp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3rd/glad/include/;../3rd/glfw/include/;../3rd/glm/;../3rd/utility/;../3rd/assimp/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../3rd/glad/lib/;../3rd/glfw/lib/;../3rd/cv/lib/</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../3rd/glad/lib/;../3rd/glfw/lib/;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

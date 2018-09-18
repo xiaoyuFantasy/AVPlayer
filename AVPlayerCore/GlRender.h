@@ -1,49 +1,11 @@
 #pragma once
 #include "RenderDefine.h"
 #include <shader.h>
+#include <camera.h>
 #include <glad\glad.h>
 #pragma comment(lib, "Opengl32.lib")
 #pragma comment(lib, "glad.lib")
 
-
-#define PANO_APICALL					__declspec(dllexport)
-#define PANO_APIENTRY					__stdcall
-
-enum class PLAY_MODE {
-	PANO2D = 0,									// 普通2D播放模式
-	STANDARD = 1,									// 球形全景播放模式
-	FISH_EYE = 2,									// 鱼眼播放模式
-	STEREO = 3,									// 小行星播放模式
-};
-
-enum class FRAME_FORMAT {
-	VIDEO = 0,									// 视频
-	PHOTO = 1,									// 图片
-};
-
-enum class STREAM_FORMAT {
-	FRAME_FORMAT_UNKNOWN = 0,						// UNKNOWN
-	FRAME_FORMAT_YUYV = 1,						// 单独含YUV420
-	FRAME_FORMAT_YUV = 2,						// 分量Y-U-V	
-};
-
-typedef struct _PANO_INOF {
-	const char*		windowTitle;						// 窗口主题
-	char*			className;							// 创建窗口类名
-	int				channels;							// 视口数量
-	int				textureWidth;						// 纹理宽
-	int				textureHeight;						// 纹理高
-	int				windowPosX;							// 窗口左上角x坐标
-	int				windowPosY;							// 窗口左上角y坐标
-	int				windowWidth;						// 窗口宽度
-	int				windowHeight;						// 窗口高度
-	const char*		filePath;							// 图片路径
-	PLAY_MODE		playMode;							// 播放模式
-	FRAME_FORMAT	format;								// 视频/图片标识
-} PANO_INFO;
-
-//#include "CSharpInterface.h"
-//#pragma comment(lib, "IVRRender.lib")
 
 class CGlRender : public IRender
 {
@@ -64,36 +26,38 @@ public:
 	void SetReverse(bool filp) override;
 
 protected:
-	void InitGL();
-	bool CreateHRC();
-	bool CreateGL();
-	void CreateVertices();
-	void CreateTexture();
+	bool InitGL();
+	void SetVerticesModel(RENDER_MODE mode = PANO2D);
 	bool CreateSwsCtx();
 
-	static LRESULT CALLBACK	mWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-
 private:
-	std::atomic_bool m_bClose = false;
-	HDC			m_hDC;
-	HGLRC		m_hRC;
-	HWND		m_hWnd = nullptr; // 保存窗口句柄.
 	int			m_nVideoWidth;// 视频宽.
 	int			m_nVideoHeight;// 视频高.
+	int			m_nWndWidth; //窗口宽
+	int			m_nWndHeight; //窗口高
 	bool		m_bKeepAspect;// 是否启用宽高比.
 	float		m_fWindowAspect;// 宽高比.
 	RECT		m_rcLastClient;// 最后位置参数.
-	int			m_nWndWidth;// 当前宽.
-	int			m_nWndHeight;// 当前高.
+	RENDER_MODE	m_renderMode = RENDER_MODE::PANO2D;
 	WNDPROC		m_oldWndProc;
 	//opengl
-	Shader*		m_pShader;
+	HWND		m_hWnd = nullptr; // 保存窗口句柄.
+	HDC			m_hDC;
+	HGLRC		m_hRC;
+	std::shared_ptr<Shader>	m_pShader;
 	unsigned int m_glVAO = 0;
 	unsigned int m_glVertices = 0;
 	unsigned int m_glIndices = 0;
 	unsigned int m_glTexturecoords = 0;
-	unsigned int m_texture[3] = { 0 };
+	unsigned int m_glTexture[3] = { 0 };
+	std::vector<GLfloat> m_vectVertices;
+	std::vector<GLuint> m_vectIndices;
+	std::vector<GLfloat> m_vectTexcoords;
+	// camera
+	Camera m_camera;
+	float m_lastX = 800.0f / 2.0;
+	float m_lastY = 600.0 / 2.0;
+	bool m_firstMouse = true;
 	//转换
 	int		m_nPixelFormat = AV_PIX_FMT_YUV420P;
 	SwsContext*			m_pSwsCtx = nullptr;

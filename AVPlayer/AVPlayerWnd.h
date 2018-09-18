@@ -2,6 +2,7 @@
 #include "AVPlayerInterface.h"
 #include "VideoWnd.h"
 #include "UIWnd.h"
+#include "SettingDialog.h"
 
 class CAVPlayerWnd : public WindowImplBase
 {
@@ -17,19 +18,20 @@ public:
 	void OnFinalMessage(HWND hWnd);
 	void InitWindow();
 	void Notify(TNotifyUI &msg);
+	void SetCmdLine(std::map<std::wstring, std::wstring> &mapCmd);
 	LRESULT HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
 protected:
 	int ParseCmdLine(const wchar_t* lpCmdLine, std::map<std::wstring, std::wstring>& pMapCmdLine);
-	static void FuncPlayerEvent(const PLAYER_EVENT e, void *data);
+	static void FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T *pData);
 	static void DurationCallback(void *userdata, int64_t duration);
 	static void ProgressCallback(void *userdata, int64_t progress);
 	static void VideoCallback(void *userdata, int nWidth, int nHeight);
 	static void ErrorCallback(void *userdata, int err, std::string strMsg);
-	void OnFileSelected(bool bRet, std::wstring filePath);
 
 private:
 	PLAYER_OPTS m_opts;
+	std::shared_ptr<CSettingDialog> m_pSettingDlg;
 	double		m_proportion = 0.0;
 	CLabelUI*	m_pLabelName = nullptr;
 	CVideoWnd*	m_pVideo = nullptr;

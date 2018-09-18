@@ -53,7 +53,7 @@ extern "C" {
 	EXPORT_API void Stop(HANDLE handle);
 
 	// 播放状态
-	PLAY_STATUS Status(HANDLE handle);
+	EXPORT_API PLAY_STATUS Status(HANDLE handle);
 
 	// 等待播放直到完成.
 	EXPORT_API bool WaitForCompletion(HANDLE handle);
@@ -84,6 +84,15 @@ extern "C" {
 
 	// 当前缓冲进度, 单位百分比.
 	EXPORT_API double Buffering(HANDLE handle);
+
+	// 渲染模型
+	EXPORT_API void SetRenderMode(HANDLE handle, RENDER_MODE mode);
+
+	//缩放
+	EXPORT_API void SetScale(HANDLE handle, float factor);
+
+	// 滚动
+	EXPORT_API void SetRotate(HANDLE handle, double xoffset, double yoffset);
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */

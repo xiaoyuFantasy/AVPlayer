@@ -1,34 +1,38 @@
 #include "stdafx.h"
 #include "GlRender.h"
+#include <math.h>
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/type_ptr.hpp>
+#include <geometry.h>
+#include <shlwapi.h>
+#include <atlbase.h>
+#include <atlstr.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+wstring GetPlayerPath(LPCTSTR lpszFolderName = nullptr)
+{
+	TCHAR szPath[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, szPath, MAX_PATH);
+	PathRemoveFileSpec(szPath);
+	PathAppend(szPath, L"shader");
+	if (lpszFolderName)
+	{
+		PathAddBackslash(szPath);
+		PathAppend(szPath, lpszFolderName);
+	}
+	PathAddBackslash(szPath);
+	return szPath;
+}
 
-const GLuint WIDTH = 800, HEIGHT = 600;
-const int pixel_w = 2160, pixel_h = 1080;
-unsigned char buf[pixel_w*pixel_h * 3 / 2] = { 0 };
-unsigned char *plane[3];
-FILE *fileYuv = nullptr;
 
 CGlRender::CGlRender()
+	:m_camera(glm::vec3(0.0f, 0.0f, 0.0f))
 {
 }
 
 CGlRender::~CGlRender()
 {
-	if (m_texture[0] != 0)
-		glDeleteTextures(3, m_texture);
-	if (m_glVAO != 0)
-		glDeleteVertexArrays(1, &m_glVAO);
-	if (m_glVertices != 0)
-		glDeleteBuffers(1, &m_glVertices);
-	if (m_glIndices != 0)
-		glDeleteBuffers(1, &m_glIndices);
-	if (m_glTexturecoords != 0)
-		glDeleteBuffers(1, &m_glTexturecoords);
-
-	if (m_hDC)
-		ReleaseDC(m_hWnd, m_hDC);
+	DestoryRender();
 }
 
 bool CGlRender::InitRender()
@@ -41,75 +45,73 @@ bool CGlRender::CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelFormat
 	if (!::IsWindow(hWnd))
 		return false;
 
-	/*RECT rc;
-	GetWindowRect(hWnd, &rc);
-	std::string strWndName = CreateGuidToString("MPlayerWnd_");
-	PANO_INFO info{ strWndName.c_str(), (char*)strWndName.c_str(), 1, nWidth, nHeight, 0, 0, rc.right - rc.left, rc.bottom - rc.top, nullptr, PLAY_MODE::PANO2D, FRAME_FORMAT::VIDEO };
-	m_hNativeRender = NativeOnCreate(hWnd, nullptr, nullptr, &info);
-	if (nullptr == m_hNativeRender)
-	{
-		av_log(NULL, AV_LOG_ERROR, "NativeOnCreate Failed!!!");
-		return false;
-	}*/
-
 	m_hWnd = hWnd;
 	m_nVideoWidth = nWidth;
 	m_nVideoHeight = nHeight;
 	m_nPixelFormat = pixelFormat;
 
-	m_oldWndProc = (WNDPROC)GetWindowLong(m_hWnd, GWL_WNDPROC);
-	SetWindowLong(m_hWnd, GWL_WNDPROC, (LONG)mWndProc);
-	
-	if (!CreateHRC())
-	{
-		av_log(NULL, AV_LOG_ERROR, "CreateHRC Failed!!!");
-		return false;
-	}
-
-	if (!CreateGL())
-	{
-		av_log(NULL, AV_LOG_ERROR, "CreateGL Failed!!!");
-		return false;
-	}
+	RECT rc;
+	GetWindowRect(hWnd, &rc);
+	m_nWndWidth = rc.right - rc.left;
+	m_nWndHeight = rc.bottom - rc.top;
 
 	if (!CreateSwsCtx())
-	{
-		av_log(NULL, AV_LOG_ERROR, "CreateSwsCtx Failed!!!");
 		return false;
-	}
 
-	plane[0] = buf;
-	plane[1] = plane[0] + pixel_w*pixel_h;
-	plane[2] = plane[1] + pixel_w*pixel_h / 4;
-	fileYuv = _fsopen("..\\Debug\\panor_2160x1080.yuv", "rb", _SH_DENYWR);
-
-	std::thread([&]() {
-		MSG msg;
-		// 循环一直到接收WM_QUIT(0)消息
-		while (::GetMessage(&msg, 0, 0, 0) > 0)
-		{
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
-		}
-	}).detach();
-	
+	if (!InitGL())
+		return false;	
 	return true;
 }
 
 void CGlRender::DestoryRender()
 {
-	m_bClose = true;
-
 	if (m_pVideoBuffer)
+	{
 		av_free(m_pVideoBuffer);
+		m_pVideoBuffer = nullptr;
+	}
 
 	if (m_pFrameOut)
 		av_frame_free(&m_pFrameOut);
 
+	if (m_glTexture[0] != 0)
+		glDeleteTextures(3, m_glTexture);
+	if (m_glVAO != 0)
+		glDeleteVertexArrays(1, &m_glVAO);
+	if (m_glVertices != 0)
+		glDeleteBuffers(1, &m_glVertices);
+	if (m_glIndices != 0)
+		glDeleteBuffers(1, &m_glIndices);
+	if (m_glTexturecoords != 0)
+		glDeleteBuffers(1, &m_glTexturecoords);
+
+	m_vectVertices.clear();
+	m_vectIndices.clear();
+	m_vectTexcoords.clear();
+
+	if (m_hDC != 0)
+	{
+		wglMakeCurrent(m_hDC, 0);
+		if (m_hRC != 0)
+		{
+			wglDeleteContext(m_hRC);
+			m_hRC = 0;
+		}
+		ReleaseDC(m_hWnd, m_hDC);
+		m_hDC = 0;
+	}
+	m_hWnd = 0;
+	if (m_hDC)
+		ReleaseDC(m_hWnd, m_hDC);
 }
 
-bool CGlRender::SetRenderMode(RENDER_MODE)
+bool CGlRender::SetRenderMode(RENDER_MODE mode)
 {
+	if (mode == m_renderMode)
+		return true;
+
+	//m_renderMode = mode;
+	/*SetVerticesModel(mode);*/
 	return false;
 }
 
@@ -118,16 +120,14 @@ void CGlRender::SetRenderSize(int width, int height)
 	if (height == 0) 
 		height = 1;
 
-	m_nWndWidth = width;
+	/*m_nWndWidth = width;
 	m_nWndHeight = height;
-	glViewport(0, 0, m_nWndWidth, m_nWndHeight);
-	/*if (m_hNativeRender != nullptr)
-		NativeUpdateViewport(m_hNativeRender, 0, 0, m_nWndWidth, m_nWndHeight);*/
+	glViewport(0, 0, m_nWndWidth, m_nWndHeight);*/
 }
 
 void CGlRender::RenderFrameData(FramePtr pFrame)
 {
-	if (m_bClose)
+	if (!::IsWindow(m_hWnd) || !IsWindowVisible(m_hWnd) || !pFrame)
 		return;
 
 	int nHeight = sws_scale(
@@ -139,60 +139,85 @@ void CGlRender::RenderFrameData(FramePtr pFrame)
 		m_pFrameOut->data,
 		m_pFrameOut->linesize);
 
-	/*if (m_hNativeRender != nullptr)
-		NativeSetFrameData(m_hNativeRender, STREAM_FORMAT::FRAME_FORMAT_YUV, m_pFrameOut->data);*/
-	if (fread(buf, 1, pixel_w*pixel_h * 3 / 2, fileYuv) != pixel_w*pixel_h * 3 / 2) {
-		if (feof(fileYuv))
-			fseek(fileYuv, 0, 0);
-	}
-
 	wglMakeCurrent(m_hDC, m_hRC);
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_texture[0]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, pixel_w, pixel_h, 0, GL_RED, GL_UNSIGNED_BYTE, plane[0]);
+	glBindTexture(GL_TEXTURE_2D, m_glTexture[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_nVideoWidth, m_nVideoHeight, 0, GL_RED, GL_UNSIGNED_BYTE, m_pFrameOut->data[0]);
 	m_pShader->setInt("tex_y", 0);
 
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_texture[1]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, pixel_w / 2, pixel_h / 2, 0, GL_RED, GL_UNSIGNED_BYTE, plane[1]);
+	glBindTexture(GL_TEXTURE_2D, m_glTexture[1]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_nVideoWidth / 2, m_nVideoHeight / 2, 0, GL_RED, GL_UNSIGNED_BYTE, m_pFrameOut->data[1]);
 	m_pShader->setInt("tex_u", 1);
 
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, m_texture[2]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, pixel_w / 2, pixel_h / 2, 0, GL_RED, GL_UNSIGNED_BYTE, plane[2]);
+	glBindTexture(GL_TEXTURE_2D, m_glTexture[2]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_nVideoWidth / 2, m_nVideoHeight / 2, 0, GL_RED, GL_UNSIGNED_BYTE, m_pFrameOut->data[2]);
 	m_pShader->setInt("tex_v", 2);
 
 	m_pShader->use();
+
+	if (m_renderMode == RENDER_MODE::PANO2D)
+	{
+		glm::mat4 projection(0.1f), view(0.1f), model(0.1f);
+		m_pShader->setMat4("projection", projection);
+		m_pShader->setMat4("view", view);
+		m_pShader->setMat4("model", model);
+	}
+	else
+	{
+		glm::mat4 projection = glm::perspective(glm::radians(m_camera.Zoom), (float)m_nWndWidth / (float)m_nWndHeight, 0.1f, 100.0f);
+		m_pShader->setMat4("projection", projection);
+		glm::mat4 view = m_camera.GetViewMatrix();
+		m_pShader->setMat4("view", view);
+
+		glm::mat4 model;
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		float angle = 0.0f;
+		model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+		m_pShader->setMat4("model", model);
+	}
+
 	glBindVertexArray(m_glVAO);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glDrawElements(GL_TRIANGLES, m_vectIndices.size(), GL_UNSIGNED_INT, 0);
+
 	::SwapBuffers(m_hDC);
 
+	RECT rc;
+	GetWindowRect(m_hWnd, &rc);
+	int width = rc.right - rc.left;
+	int height = rc.bottom - rc.top;
+	if (m_nWndWidth != width || m_nWndHeight != height)
+	{
+		glViewport(0, 0, width, height);
+		m_nWndWidth = width;
+		m_nWndHeight = height;
+	}
 }
 
 void CGlRender::SetScale(float factor)
 {
+	m_camera.ProcessMouseScroll(factor);
 }
 
 void CGlRender::SetRotate(float x, float y)
 {
+	m_camera.ProcessMouseMovement(x, y);
 }
 
 void CGlRender::SetScroll(float latitude, float longitude)
 {
+	
 }
 
 void CGlRender::SetReverse(bool filp)
 {
 }
 
-void CGlRender::InitGL()
-{
-}
-
-bool CGlRender::CreateHRC()
+bool CGlRender::InitGL()
 {
 	PIXELFORMATDESCRIPTOR pfd = {
 		sizeof(PIXELFORMATDESCRIPTOR),
@@ -229,26 +254,52 @@ bool CGlRender::CreateHRC()
 		return false;
 	if (wglMakeCurrent(m_hDC, m_hRC) == false)
 		return false;
-	return true;
-}
 
-bool CGlRender::CreateGL()
-{
 	if (!gladLoadGL())
-	{
-		av_log(NULL, AV_LOG_ERROR, "glewInit Failed!!!");
 		return false;
-	}
 
-	static Shader glShader("Shader.vsh", "Shader.fsh");
-	m_pShader = &glShader;
+	std::wstring wstrVshPath = GetPlayerPath() + L"Shader.vsh";
+	std::wstring wstrFshPath = GetPlayerPath() + L"Shader.fsh";
+	//m_pShader = std::make_shared<Shader>("Shader.vsh", "Shader.fsh");
+	m_pShader = std::make_shared<Shader>(CW2A(wstrVshPath.c_str(), CP_UTF8), CW2A(wstrFshPath.c_str(), CP_UTF8));
 
 	RECT rc;
 	GetWindowRect(m_hWnd, &rc);
 	glViewport(0, 0, rc.right - rc.left, rc.bottom - rc.top);
 
-	CreateVertices();
-	CreateTexture();
+	/*** vertices ***/
+	glGenVertexArrays(1, &m_glVAO);
+	glGenBuffers(1, &m_glVertices);
+	glGenBuffers(1, &m_glIndices);
+	glGenBuffers(1, &m_glTexturecoords);
+
+	SetVerticesModel();
+
+	/*** yuv texture ***/
+	glGenTextures(3, m_glTexture);
+	glBindTexture(GL_TEXTURE_2D, m_glTexture[0]); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+												// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindTexture(GL_TEXTURE_2D, m_glTexture[1]); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+												// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindTexture(GL_TEXTURE_2D, m_glTexture[2]); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+												// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -260,79 +311,32 @@ bool CGlRender::CreateGL()
 	return true;
 }
 
-void CGlRender::CreateVertices()
+void CGlRender::SetVerticesModel(RENDER_MODE mode)
 {
-	float vertices[] = {
-		// positions         
-		1.0f,  1.0f, 0.0f,	
-		1.0f, -1.0f, 0.0f,	
-		-1.0f, -1.0f, 0.0f,	
-		-1.0f,  1.0f, 0.0f,
-	};
+	m_vectVertices.clear();
+	m_vectIndices.clear();
+	m_vectTexcoords.clear();
+	if (mode == RENDER_MODE::PANO2D)
+		generatePlaneGeometry(m_vectVertices, m_vectIndices, m_vectTexcoords);
+	else
+		generateSphereGeometry(2.0f, m_vectVertices, m_vectIndices, m_vectTexcoords);
 
-	float texturecoords[] = {
-		// texture coords
-		1.0f, 0.0f, // top right
-		1.0f, 1.0f, // bottom right
-		0.0f, 1.0f, // bottom left
-		0.0f, 0.0f  // top left 
-	};
-
-	unsigned int indices[] = {
-		0, 1, 3, // first triangle
-		1, 2, 3  // second triangle
-	};
-
-
-	
-	glGenVertexArrays(1, &m_glVAO);
-	glGenBuffers(1, &m_glVertices);
-	glGenBuffers(1, &m_glIndices);
-	glGenBuffers(1, &m_glTexturecoords);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
 	glBindVertexArray(m_glVAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_glVertices);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_vectVertices.size() * sizeof(GLfloat), m_vectVertices.data(), GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_glIndices);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_vectIndices.size() * sizeof(GLuint), m_vectIndices.data(), GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_glTexturecoords);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(texturecoords), texturecoords, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_vectTexcoords.size() * sizeof(GLfloat), m_vectTexcoords.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
-}
-
-void CGlRender::CreateTexture()
-{
-	glGenTextures(3, m_texture);
-	glBindTexture(GL_TEXTURE_2D, m_texture[0]); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-											  // set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glBindTexture(GL_TEXTURE_2D, m_texture[1]); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-											  // set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glBindTexture(GL_TEXTURE_2D, m_texture[2]); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-											  // set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 bool CGlRender::CreateSwsCtx()
@@ -385,9 +389,4 @@ bool CGlRender::CreateSwsCtx()
 		1);
 
 	return true;
-}
-
-LRESULT CGlRender::mWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }

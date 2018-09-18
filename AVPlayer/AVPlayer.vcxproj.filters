@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="misc">
+      <UniqueIdentifier>{a4ab54f4-f873-4ab6-8864-04f591484a23}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -45,6 +48,15 @@
     <ClInclude Include="FileDialogEx.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="misc\AES.h">
+      <Filter>misc</Filter>
+    </ClInclude>
+    <ClInclude Include="misc\AES_Encryptor.h">
+      <Filter>misc</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingDialog.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -60,6 +72,15 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="FileDialogEx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="misc\AES.cpp">
+      <Filter>misc</Filter>
+    </ClCompile>
+    <ClCompile Include="misc\AES_Encryptor.cpp">
+      <Filter>misc</Filter>
+    </ClCompile>
+    <ClCompile Include="SettingDialog.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

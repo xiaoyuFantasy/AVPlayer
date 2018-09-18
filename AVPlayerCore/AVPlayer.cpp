@@ -96,6 +96,12 @@ EXPORT_API void Stop(HANDLE handle)
 	player->Stop();
 }
 
+EXPORT_API void SetRenderMode(HANDLE handle, RENDER_MODE mode)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->SetRenderMode(mode);
+}
+
 PLAY_STATUS Status(HANDLE handle)
 {
 	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
@@ -160,4 +166,16 @@ EXPORT_API double Buffering(HANDLE handle)
 {
 	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
 	return player->Buffering();
+}
+
+EXPORT_API void SetScale(HANDLE handle, float factor)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->SetScale(factor);
+}
+
+EXPORT_API void SetRotate(HANDLE handle, double xoffset, double yoffset)
+{
+	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
+	player->SetRotate(xoffset, yoffset);
 }

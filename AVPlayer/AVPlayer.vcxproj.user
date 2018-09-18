@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>/spath_ "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>/is_child_wnd false /wnd_name avplayer_0_{037B959A-8D40-4EB7-8CB7-C92772557F76} /channel_name avplayer_0_{037B959A-8D40-4EB7-8CB7-C92772557F76} /video_index 0 /video_type 1</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>/spath "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>
+    </LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

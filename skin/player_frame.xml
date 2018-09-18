@@ -59,6 +59,7 @@
                     <Button name="btnVolumeZero" padding="10,16,5,0" tooltip="取消静音" visible="false" width="16" height="16" normalimage="file='image\button\btn_volume_zero.png' source='0,0,16,16'" hotimage="file='image\button\btn_volume_zero.png' source='17,0,33,16'" pushedimage="file='image\button\btn_volume_zero.png' source='34,0,50,16'" />
                     <Slider name="sliderVol" padding="0,14,0,0" width="85" height="20"  min="0" max="128" value="60" bkimage="image\slider\SliderBackVolume.png"  foreimage="image\slider\SliderForeVolume.png" hor="true" thumbimage="file='image\slider\SliderBar.png' source='0,0,20,20' " thumbhotimage="file='image\slider\SliderBar.png' source='21,0,41,20'" thumbpushedimage="file='image\slider\SliderBar.png' source='42,0,62,20'" thumbsize="20,20" />
                     <Control />
+                    <Button name="btnRenderMode" tooltip="播放" width="48" height="48" normalimage="file='image\button\btn_play.png' source='0,0,48,50'" hotimage="file='image\button\btn_play.png' source='49,0,97,48'" pushedimage="file='image\button\btn_play.png' source='98,0,146,48'" />
                 </HorizontalLayout>
             </HorizontalLayout>
         </VerticalLayout>

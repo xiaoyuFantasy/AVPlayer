@@ -1,15 +1,14 @@
 #include "stdafx.h"
 #include "VideoPlayer.h"
 #include "DecoderFactory.h"
-
-
-
+#include "RenderFactory.h"
+#include "GlRender.h"
 
 CVideoPlayer::CVideoPlayer()
 	: m_queueFrame(5)
 	, m_queuePacket(MAX_VIDEO_SIZE)
 {
-	
+	m_pDecoder = CDecoderFactory::getSingleModule().CreateDecoder();
 }
 
 CVideoPlayer::~CVideoPlayer()
@@ -35,8 +34,6 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 {
 	if (m_bOpen)
 		return false;
-
-	m_pDecoder = CDecoderFactory::getSingleModule().CreateDecoder();
 	
 	m_opts = opts;
 	if (!CreateDecoder())
@@ -52,6 +49,8 @@ bool CVideoPlayer::Open(PLAYER_OPTS &opts)
 	m_bOpen = true;
 	m_bPlaying = false;
 	m_bQuit = false;
+	m_bStopDecode = false;
+	m_bStopRender = false;
 	return true;
 }
 
@@ -90,6 +89,10 @@ void CVideoPlayer::Stop()
 		return;
 
 	m_bQuit = true;
+
+	m_queuePacket.Quit();
+	m_queueFrame.Quit();
+
 	if (m_threadDecode.joinable())
 		m_threadDecode.join();
 
@@ -102,9 +105,9 @@ void CVideoPlayer::Stop()
 	if (m_pHWDeviceCtx)
 		av_buffer_unref(&m_pHWDeviceCtx);
 
-	if (m_pRender)
-		m_pRender->DestoryRender();
+	m_bOpen = false;
 	m_bPlaying = false;
+	m_clock = 0.0;
 }
 
 double CVideoPlayer::GetClock()
@@ -216,6 +219,7 @@ void CVideoPlayer::DecodeThread()
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				continue;
 			}
+
 			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
 			if (m_pDecoder && m_pDecoder->DecodeFrame(pFrame, m_queuePacket) >= 0)
 			{
@@ -252,6 +256,7 @@ void CVideoPlayer::RenderThread()
 		av_log(NULL, AV_LOG_INFO, "Video Render Thread");
 		if (m_pRender)
 			m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? m_pCodecCtx->pix_fmt : AV_PIX_FMT_NV12);
+		
 		while (!m_bStopRender && !m_bQuit)
 		{
 			if (m_bPause)
@@ -291,7 +296,7 @@ void CVideoPlayer::RenderThread()
 				}
 				else
 				{
-					float delay = SmoothVideo(pFrame.get(), m_queueFrame.Size());
+					float delay = SmoothVideo(pFrame.get(), m_queuePacket.Count());
 					::Sleep(delay);
 				}
 
@@ -306,6 +311,9 @@ void CVideoPlayer::RenderThread()
 				m_pRender->RenderFrameData(std::move(pFrame));
 			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
+
+		if (m_pRender)
+			m_pRender->DestoryRender();
 		av_log(NULL, AV_LOG_INFO, "Video Render Thread End!!!");
 	});
 }

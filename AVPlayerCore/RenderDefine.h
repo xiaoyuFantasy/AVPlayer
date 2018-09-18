@@ -1,12 +1,7 @@
 #pragma once
 #include "stdafx.h"
+#include "AVPlayerDefine.h"
 
-enum RENDER_MODE {
-	PANO2D = 0,		// 普通2D播放模式
-	STANDARD = 1,	// 球形全景播放模式
-	FISH_EYE = 2,	// 鱼眼播放模式
-	STEREO = 3,		// 小行星播放模式
-};
 
 class IRender
 {

@@ -56,6 +56,7 @@ public:
         catch (std::ifstream::failure e)
         {
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+			av_log(nullptr, AV_LOG_ERROR, "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ");
         }
         const char* vShaderCode = vertexCode.c_str();
         const char * fShaderCode = fragmentCode.c_str();
