@@ -482,7 +482,7 @@ private:
 	bool m_bDragMode;
 	HBITMAP m_hDragBitmap;
 	bool m_bDropEnable;
-	CDropTargetEx* m_pDropTarget;
+	CDropTargetEx m_dropTarget;
 	IDataObject*   m_pCurDataObject;
 
     //

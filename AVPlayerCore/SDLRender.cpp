@@ -128,7 +128,7 @@ void CSDLRender::SetRenderSize(int width, int height)
 	m_bSizeChanged = true;
 }
 
-void CSDLRender::RenderFrameData(FramePtr pFrame)
+void CSDLRender::RenderFrameData(AVFrame *pFrame)
 {
 	AVFrame* pTempFrame;
 	if (m_pSwsCtx)
@@ -144,7 +144,7 @@ void CSDLRender::RenderFrameData(FramePtr pFrame)
 		pTempFrame = m_pFrameOut;
 	}
 	else
-		pTempFrame = pFrame.get();
+		pTempFrame = pFrame;
 
 	SDL_SetRenderDrawColor(m_pRenderer, 0, 0, 0, 255);
 

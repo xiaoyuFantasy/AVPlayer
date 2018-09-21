@@ -1,34 +1,36 @@
 #pragma once
 #include "ipc/ipc_common.h"
+#include <mutex>
 
-class Lock
-{
-public:
-	Lock();
-	~Lock();
-
-	bool Try();
-
-	// Take the lock, blocking until it is available if necessary.
-	void Dolock();
-
-	// Release the lock.  This must only be called by the lock's holder: after
-	// a successful call to Try, or a call to Lock.
-	void Unlock();
-
-private:
-	CRITICAL_SECTION cs;
-	DISALLOW_COPY_AND_ASSIGN(Lock);
-};
+//class Lock
+//{
+//public:
+//	Lock();
+//	~Lock();
+//
+//	bool Try();
+//
+//	// Take the lock, blocking until it is available if necessary.
+//	void Dolock();
+//
+//	// Release the lock.  This must only be called by the lock's holder: after
+//	// a successful call to Try, or a call to Lock.
+//	void Unlock();
+//
+//private:
+//	//CRITICAL_SECTION cs;
+//	std::mutex cs;
+//	DISALLOW_COPY_AND_ASSIGN(Lock);
+//};
 
 class AutoLock
 {
 public:
-	explicit AutoLock(Lock& m);
+	explicit AutoLock(std::mutex& m);
 	~AutoLock();
 
 private:
-	Lock& m_;
+	std::mutex& m_;
 	DISALLOW_COPY_AND_ASSIGN(AutoLock);
 };
 

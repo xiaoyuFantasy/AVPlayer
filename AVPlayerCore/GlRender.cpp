@@ -8,13 +8,14 @@
 #include <shlwapi.h>
 #include <atlbase.h>
 #include <atlstr.h>
+#include "Shader.vsh"
+#include "Shader.fsh"
 
 wstring GetPlayerPath(LPCTSTR lpszFolderName = nullptr)
 {
 	TCHAR szPath[MAX_PATH] = { 0 };
 	GetModuleFileName(NULL, szPath, MAX_PATH);
 	PathRemoveFileSpec(szPath);
-	PathAppend(szPath, L"shader");
 	if (lpszFolderName)
 	{
 		PathAddBackslash(szPath);
@@ -71,6 +72,9 @@ void CGlRender::DestoryRender()
 		m_pVideoBuffer = nullptr;
 	}
 
+	if (m_pSwsCtx)
+		sws_freeContext(m_pSwsCtx);
+
 	if (m_pFrameOut)
 		av_frame_free(&m_pFrameOut);
 
@@ -110,8 +114,7 @@ bool CGlRender::SetRenderMode(RENDER_MODE mode)
 	if (mode == m_renderMode)
 		return true;
 
-	//m_renderMode = mode;
-	/*SetVerticesModel(mode);*/
+	m_renderMode = mode;
 	return false;
 }
 
@@ -119,16 +122,23 @@ void CGlRender::SetRenderSize(int width, int height)
 {
 	if (height == 0) 
 		height = 1;
-
-	/*m_nWndWidth = width;
-	m_nWndHeight = height;
-	glViewport(0, 0, m_nWndWidth, m_nWndHeight);*/
 }
 
-void CGlRender::RenderFrameData(FramePtr pFrame)
+void CGlRender::RenderFrameData(AVFrame *pFrame)
 {
 	if (!::IsWindow(m_hWnd) || !IsWindowVisible(m_hWnd) || !pFrame)
 		return;
+
+	if (!m_pShader->checkSuccess())
+		return;
+
+	if (m_nVideoWidth != pFrame->width || m_nVideoHeight != pFrame->height || pFrame->format != m_nPixelFormat)
+	{
+		m_nVideoWidth = pFrame->width;
+		m_nVideoHeight = pFrame->height;
+		m_nPixelFormat = pFrame->format;
+		CreateSwsCtx();
+	}
 
 	int nHeight = sws_scale(
 		m_pSwsCtx,
@@ -143,10 +153,43 @@ void CGlRender::RenderFrameData(FramePtr pFrame)
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	GLuint err = glGetError();
+	if (err)
+	{
+		const GLubyte *szErr = glewGetErrorString(err);
+		av_log(NULL, AV_LOG_ERROR, "render default color error:%d, msg:%s!!!", err, szErr);
+	}
+
 	glActiveTexture(GL_TEXTURE0);
+	err = glGetError();
+	if (err)
+	{
+		const GLubyte *szErr = glewGetErrorString(err);
+		av_log(NULL, AV_LOG_ERROR, "active texture 0 error:%d, msg:%s!!!", err, szErr);
+	}
 	glBindTexture(GL_TEXTURE_2D, m_glTexture[0]);
+	err = glGetError();
+	if (err)
+	{
+		const GLubyte *szErr = glewGetErrorString(err);
+		av_log(NULL, AV_LOG_ERROR, "bind texture 0 error:%d, msg:%s!!!", err, szErr);
+	}
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_nVideoWidth, m_nVideoHeight, 0, GL_RED, GL_UNSIGNED_BYTE, m_pFrameOut->data[0]);
+	err = glGetError();
+	if (err)
+	{
+		const GLubyte *szErr = glewGetErrorString(err);
+		av_log(NULL, AV_LOG_ERROR, "teximage2d texture 0 error:%d, msg:%s!!!", err, szErr);
+	}
+	GLuint location =  m_pShader->getUniform("tex_y");
+	//m_pShader->setInt(location, 0);
 	m_pShader->setInt("tex_y", 0);
+	err = glGetError();
+	if (err)
+	{
+		const GLubyte *szErr = glewGetErrorString(err);
+		av_log(NULL, AV_LOG_ERROR, "set y texture failed!!!, location:%d, error:%d, msg:%s", location, err, szErr);
+	}
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, m_glTexture[1]);
@@ -157,6 +200,13 @@ void CGlRender::RenderFrameData(FramePtr pFrame)
 	glBindTexture(GL_TEXTURE_2D, m_glTexture[2]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, m_nVideoWidth / 2, m_nVideoHeight / 2, 0, GL_RED, GL_UNSIGNED_BYTE, m_pFrameOut->data[2]);
 	m_pShader->setInt("tex_v", 2);
+
+	err = glGetError();
+	if (err)
+	{
+		const GLubyte *szErr = glewGetErrorString(err);
+		av_log(NULL, AV_LOG_ERROR, "render yuv error:%d, msg:%s!!!", err, szErr);
+	}
 
 	m_pShader->use();
 
@@ -185,6 +235,7 @@ void CGlRender::RenderFrameData(FramePtr pFrame)
 	glDrawElements(GL_TRIANGLES, m_vectIndices.size(), GL_UNSIGNED_INT, 0);
 
 	::SwapBuffers(m_hDC);
+	
 
 	RECT rc;
 	GetWindowRect(m_hWnd, &rc);
@@ -255,13 +306,59 @@ bool CGlRender::InitGL()
 	if (wglMakeCurrent(m_hDC, m_hRC) == false)
 		return false;
 
+#ifdef GLAD
 	if (!gladLoadGL())
 		return false;
+#endif // GLAD
 
-	std::wstring wstrVshPath = GetPlayerPath() + L"Shader.vsh";
-	std::wstring wstrFshPath = GetPlayerPath() + L"Shader.fsh";
-	//m_pShader = std::make_shared<Shader>("Shader.vsh", "Shader.fsh");
-	m_pShader = std::make_shared<Shader>(CW2A(wstrVshPath.c_str(), CP_UTF8), CW2A(wstrFshPath.c_str(), CP_UTF8));
+#ifdef GLEW
+	GLenum err = glewInit();
+	if (GLEW_OK != err)
+	{
+		av_log(NULL, AV_LOG_ERROR, "glewInit failed!!!");
+		return false;
+	}
+#endif // GLEW
+
+	const char *vertexShaderSource = "#version 330 core\n"
+		"layout(location = 0) in vec3 aPos;\n"
+		"layout(location = 1) in vec2 aTexCoord;\n"
+		"varying vec2 textureOut;\n"
+		"uniform mat4 model;\n"
+		"uniform mat4 view;\n"
+		"uniform mat4 projection;\n"
+		"void main(void)\n"
+		"{\n"
+			"gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+			"textureOut = vec2(aTexCoord.x, aTexCoord.y);\n"
+		"}\n\0";
+
+	const char *fragmentShaderSource = "#version 330 core\n"
+		"varying vec2 textureOut;\n"
+		"uniform sampler2D tex_y;\n"
+		"uniform sampler2D tex_u;\n"
+		"uniform sampler2D tex_v;\n"
+		"void main(void)\n"
+		"{\n"
+		"	vec3 yuv;\n"
+		"	vec3 rgb;\n"
+		"	yuv.x = texture2D(tex_y, textureOut).r;\n"
+		"	yuv.y = texture2D(tex_u, textureOut).r - 0.5;\n"
+		"	yuv.z = texture2D(tex_v, textureOut).r - 0.5;\n"
+		"	rgb = mat3(1, 1, 1,\n"
+		"		0, -0.39465, 2.03211,\n"
+		"		1.13983, -0.58060, 0) * yuv;\n"
+		"	gl_FragColor = vec4(rgb, 1);\n"
+		"}\n\0";
+
+	m_pShader = std::make_shared<Shader>(vertexShaderSource, fragmentShaderSource);
+	if (!m_pShader->checkSuccess())
+	{
+		av_log(NULL, AV_LOG_ERROR, "build and compile shaders failed!!!");
+		return false;
+	}
+
+	av_log(NULL, AV_LOG_INFO, "build and compile success id:%d", m_pShader->ID);
 
 	RECT rc;
 	GetWindowRect(m_hWnd, &rc);
@@ -301,6 +398,13 @@ bool CGlRender::InitGL()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+	err = glGetError();
+	if (err)
+	{
+		const GLubyte *szErr = glewGetErrorString(err);
+		av_log(NULL, AV_LOG_ERROR, "bind yuv texture error:%d, msg:%s!!!", err, szErr);
+	}
+
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -316,7 +420,7 @@ void CGlRender::SetVerticesModel(RENDER_MODE mode)
 	m_vectVertices.clear();
 	m_vectIndices.clear();
 	m_vectTexcoords.clear();
-	if (mode == RENDER_MODE::PANO2D)
+	if (m_renderMode == RENDER_MODE::PANO2D)
 		generatePlaneGeometry(m_vectVertices, m_vectIndices, m_vectTexcoords);
 	else
 		generateSphereGeometry(2.0f, m_vectVertices, m_vectIndices, m_vectTexcoords);
@@ -337,6 +441,13 @@ void CGlRender::SetVerticesModel(RENDER_MODE mode)
 	glBufferData(GL_ARRAY_BUFFER, m_vectTexcoords.size() * sizeof(GLfloat), m_vectTexcoords.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
+
+	GLuint err = glGetError();
+	if (err)
+	{
+		const GLubyte *szErr = glewGetErrorString(err);
+		av_log(NULL, AV_LOG_ERROR, "bind vertices error:%d, msg:%s!!!", err, szErr);
+	}
 }
 
 bool CGlRender::CreateSwsCtx()
@@ -348,6 +459,9 @@ bool CGlRender::CreateSwsCtx()
 	m_pFrameOut->format = AV_PIX_FMT_YUV420P;
 	m_pFrameOut->width = m_nVideoWidth;
 	m_pFrameOut->height = m_nVideoHeight;
+
+	if (m_pSwsCtx)
+		sws_freeContext(m_pSwsCtx);
 
 	m_pSwsCtx = sws_getContext(
 		m_nVideoWidth,

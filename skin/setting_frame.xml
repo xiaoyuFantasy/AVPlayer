@@ -26,6 +26,10 @@
                 <Edit name="edit_path" padding="20,0,0,0" />
                 <Button name="btn_browse" padding="10,0,10,0" text="浏览" textcolor="0xFFEDECEC" bkcolor="0xFF2782dc" width="30" height="30" />
             </HorizontalLayout>
+            <HorizontalLayout height="30" padding="10,10,10,0">
+                <Option name="normal_render" padding="100,0,0,0" height="30" text="普通模式" selectedbkcolor="0xFF00FF00" selected="true" bkcolor="0xFFFFFFFF" group="render_group" />
+                <Option name="3D_render" padding="0,0,100,0" height="30" text="全景模式" selectedbkcolor="0xFF00FF00" bkcolor="0xFFFFFFFF" group="render_group" />
+            </HorizontalLayout>
             <Control />
             <HorizontalLayout height="60">
                 <Control />

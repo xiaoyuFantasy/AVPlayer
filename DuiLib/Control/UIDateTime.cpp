@@ -52,6 +52,14 @@ namespace DuiLib
 			::GetLocalTime(&m_pOwner->m_sysTime);
 
 		::SendMessage(m_hWnd, DTM_SETSYSTEMTIME, 0, (LPARAM)&m_pOwner->m_sysTime);
+		CDuiString strFormat;
+		if (m_pOwner->GetCalendarStyle() && m_pOwner->GetTimeStyle())
+			strFormat = _T("yyyy-MM-dd HH:mm:ss");
+		else if (m_pOwner->GetCalendarStyle())
+			strFormat = _T("yyyy-MM-dd");
+		else
+			strFormat = _T("HH:mm:ss");
+		::SendMessage(m_hWnd, DTM_SETFORMAT, 0, (LPARAM)strFormat.GetData());
 		::ShowWindow(m_hWnd, SW_SHOWNOACTIVATE);
 		::SetFocus(m_hWnd);
 
@@ -193,16 +201,7 @@ namespace DuiLib
 	//
 	CDateTimeUI::CDateTimeUI()
 	{
-		::GetLocalTime(&m_sysTime);
-		m_sysTime.wHour = 0;
-		m_sysTime.wMinute = 0;
-		m_sysTime.wSecond = 0;
-		m_sysTime.wMilliseconds = 0;
-		m_bReadOnly = false;
-		m_pWindow = NULL;
-		m_nDTUpdateFlag=DT_UPDATE;
-		UpdateText();		// add by:daviyang35 初始化界面时显示时间
-		m_nDTUpdateFlag = DT_NONE;
+		
 	}
 
 	LPCTSTR CDateTimeUI::GetClass() const
@@ -225,6 +224,20 @@ namespace DuiLib
 	{
 		if (m_pWindow) return m_pWindow->GetHWND();
 		return NULL;
+	}
+
+	void CDateTimeUI::Init()
+	{
+		::GetLocalTime(&m_sysTime);
+		m_sysTime.wHour = 0;
+		m_sysTime.wMinute = 0;
+		m_sysTime.wSecond = 0;
+		m_sysTime.wMilliseconds = 0;
+		m_bReadOnly = false;
+		m_pWindow = NULL;
+		m_nDTUpdateFlag = DT_UPDATE;
+		UpdateText();		// add by:daviyang35 初始化界面时显示时间
+		m_nDTUpdateFlag = DT_NONE;
 	}
 
 	SYSTEMTIME& CDateTimeUI::GetTime()
@@ -256,8 +269,16 @@ namespace DuiLib
 		else if (m_nDTUpdateFlag == DT_UPDATE)
 		{
 			CDuiString sText;
-			sText.SmallFormat(_T("%4d-%02d-%02d"),
-				m_sysTime.wYear, m_sysTime.wMonth, m_sysTime.wDay, m_sysTime.wHour, m_sysTime.wMinute);
+			if (m_bTimeStyle && m_bCalendarStyle)
+				sText.SmallFormat(_T("%4d-%02d-%02d %02d:%02d:%02d"),
+					m_sysTime.wYear, m_sysTime.wMonth, m_sysTime.wDay, m_sysTime.wHour, m_sysTime.wMinute, m_sysTime.wSecond);
+			else if (m_bCalendarStyle)
+				sText.SmallFormat(_T("%4d-%02d-%02d"),
+					m_sysTime.wYear, m_sysTime.wMonth, m_sysTime.wDay);
+			else 
+				sText.SmallFormat(_T("%02d:%02d:%02d"),
+					m_sysTime.wHour, m_sysTime.wMinute, m_sysTime.wSecond);
+			
 			SetText(sText);
 		}
 	}
@@ -352,5 +373,34 @@ namespace DuiLib
 		}
 
 		CLabelUI::DoEvent(event);
+	}
+
+	void CDateTimeUI::SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue)
+	{
+		if (_tcscmp(pstrName, _T("calendarstyle")) == 0)
+			SetCalendarStyle(_tcscmp(pstrValue, _T("true")) == 0);
+		else if (_tcscmp(pstrName, _T("timestyle")) == 0)
+			SetTimeStyle(_tcscmp(pstrValue, _T("true")) == 0);
+		else 
+			__super::SetAttribute(pstrName, pstrValue);
+	}
+
+	void CDateTimeUI::SetCalendarStyle(bool bShow)
+	{
+		m_bCalendarStyle = bShow;
+	}
+
+	bool CDateTimeUI::GetCalendarStyle()
+	{
+		return m_bCalendarStyle;
+	}
+
+	void CDateTimeUI::SetTimeStyle(bool bShow)
+	{
+		m_bTimeStyle = bShow;
+	}
+	bool CDateTimeUI::GetTimeStyle()
+	{
+		return m_bTimeStyle;
 	}
 }

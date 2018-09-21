@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <Window drop="true">
-    <VerticalLayout bkcolor="0xFF364c78" menu="true" drop="true" >
+    <VerticalLayout name="video_layout" bkcolor="0xFF364c78" menu="true" drop="true" >
+        <Label name="msg" textcolor="0xFFFFFFFF" multiline="true" />
     </VerticalLayout>
 </Window>

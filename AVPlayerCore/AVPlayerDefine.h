@@ -6,6 +6,12 @@
 #include <future>
 using namespace std;
 
+enum ErrorID
+{
+	OpenError,
+	GlCreateError,
+};
+
 enum PLAYER_EVENT
 {
 	PlayerOpening,
@@ -20,53 +26,62 @@ enum PLAYER_EVENT
 	PlayerPositionChanged,
 	PlayerRenderFrame,
 	PlayerClosed,
+	PlayerError,
 };
 
-typedef struct PLAYER_EVENT_T
+struct PlayerOpenSt
 {
-	int type;
-	void *userData;
-	union
-	{
-		struct PlayerOpen
-		{
-			bool IsHasVideo = false;
-			bool IsHasAudio = false;
-			int duration;
-		};
-		struct PlayerFirstFrame
-		{
-			int width;
-			int height;
-		};
-		struct PlayerAudioState
-		{
-			int channels;
-			int sample_rate;
-		};
-		struct PlayerVideoState
-		{
-			int nFixelFormat;
-			int width;
-			int height;
-		};
-		struct PlayerPosition
-		{
-			double pos;
-		};
-		struct PlayerFrame
-		{
-			int nPixelFormat;
-			int nWidth;
-			int nHeight;
-			unsigned char** ppData;
-		};
-	};
+	bool IsHasVideo = false;
+	bool IsHasAudio = false;
+	int duration;
 };
+struct PlayerFirstFrameSt
+{
+	int width;
+	int height;
+};
+struct PlayerAudioStateSt
+{
+	int channels;
+	int sample_rate;
+};
+struct PlayerVideoStateSt
+{
+	int nFixelFormat;
+	int width;
+	int height;
+};
+struct PlayerPositionSt
+{
+	double pos;
+};
+struct PlayerFrameSt
+{
+	int nPixelFormat;
+	int nWidth;
+	int nHeight;
+	unsigned char** ppData;
+};
+struct PlayerErrorSt
+{
+	int nCode;
+	std::string strErrMsg;
+};
+
+//typedef struct PLAYER_EVENT_T
+//{
+//	int type;
+//	void *userData;
+//	union
+//	{
+//		
+//	};
+//};
 
 enum PLAY_STATUS
 {
 	NoneStatus,
+	OpeningStatus,
 	OpenedStatus, 
 	PlayingStatus, 
 	PausedStatus,
@@ -77,8 +92,8 @@ enum PLAY_STATUS
 
 enum VIDEO_TYPE
 {
-	NORMAL_TYPE,
-	PANORAMIC_TYPE,
+	NORMAL_TYPE = 1 ,
+	PANORAMIC_TYPE = 2,
 };
 
 enum DECODE_TYPE
@@ -94,7 +109,7 @@ enum RENDER_MODE {
 	STEREO = 3,		// 小行星播放模式
 };
 
-typedef void(*FuncPlayerEvent)(void *user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T *pData);
+typedef void(*FuncPlayerEvent)(void *user_data, const PLAYER_EVENT e, void *pData);
 
 typedef struct _PLAYER_OPTS
 {

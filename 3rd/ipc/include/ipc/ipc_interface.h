@@ -27,7 +27,7 @@ namespace IPC
 		virtual void      AddRef() const = 0;
 		virtual void      Release() const = 0;
 		virtual ErrorCode Send(const char* message, size_t len) = 0;
-		virtual bool      HasListener() const = 0;
+		virtual bool      HasListener() = 0;
 		virtual void	  SetListener(IListener* listener) = 0;
 	};
 

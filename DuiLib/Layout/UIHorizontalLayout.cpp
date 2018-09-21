@@ -332,16 +332,18 @@ namespace DuiLib
 
 	SIZE CHorizontalLayoutUI::EstimateSize(SIZE szAvailable)
 	{
-		if (m_bAutoCalcHeight)
+		if (m_bAutoCalcWidth || m_bAutoCalcHeight)
 		{
-			SIZE szFloat = m_cxyFixed;
-			SIZE szMax = m_cxyFixed;
+			SIZE szFloat = { 0,0 };
+			SIZE szMax = { 0,0 };
 			for (int it = 0; it < m_items.GetSize(); it++) {
 				CControlUI* pControl = static_cast<CControlUI*>(m_items[it]);
 				if (!pControl->IsVisible()) continue;
 				if (pControl->IsFloat()) {
 					SIZE szXY = pControl->GetFixedXY();
 					SIZE szEstimate = pControl->EstimateSize(szAvailable);
+					if (szXY.cx + szEstimate.cx > szFloat.cx)
+						szFloat.cx = szXY.cx + szEstimate.cx;
 					if (szXY.cy + szEstimate.cy > szFloat.cy)
 						szFloat.cy = szXY.cy + szEstimate.cy;
 				}
@@ -349,8 +351,11 @@ namespace DuiLib
 					SIZE szEstimate = pControl->EstimateSize(szAvailable);
 					if (szEstimate.cy > szMax.cy)
 						szMax.cy = szEstimate.cy;
+					szMax.cx += szEstimate.cx;
 				}
 			}
+			if (szFloat.cx > szMax.cx)
+				szMax.cx = szFloat.cx;
 
 			if (szFloat.cy > szMax.cy)
 				szMax.cy = szFloat.cy;
@@ -360,8 +365,18 @@ namespace DuiLib
 			if (m_pHorizontalScrollBar && m_pHorizontalScrollBar->IsVisible()) {
 				szMax.cy += m_pHorizontalScrollBar->GetFixedHeight();
 			}
-			szMax.cx = szAvailable.cx;
-			return szMax;
+
+			szMax.cx += m_rcPadding.right + m_rcPadding.left;
+			szMax.cx += m_rcInset.right + m_rcInset.left;
+			if (m_pVerticalScrollBar && m_pVerticalScrollBar->IsVisible()) {
+				szMax.cx += m_pVerticalScrollBar->GetFixedWidth();
+			}
+
+			if (m_bAutoCalcWidth)
+				m_cxyFixed.cx = szMax.cx;
+			if (m_bAutoCalcHeight)
+				m_cxyFixed.cy = szMax.cy;
+			return m_cxyFixed;
 		}
 		else
 		{

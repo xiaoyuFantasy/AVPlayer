@@ -5,7 +5,9 @@
 #include "AVPlayer.h"
 #include "AVPlayerWnd.h"
 #include <Shellapi.h>
+#include <DbgHelp.h>
 #pragma comment(lib, "Shell32.lib")
+#pragma comment(lib, "Dbghelp.lib")
 
 wstring GetSkinPath(LPCTSTR lpszFolderName = nullptr)
 {
@@ -24,6 +26,40 @@ wstring GetSkinPath(LPCTSTR lpszFolderName = nullptr)
 	}
 	PathAddBackslash(szPath);
 	return szPath;
+}
+
+void CreateDumpFile(LPCWSTR lpstrDumpFilePathName, EXCEPTION_POINTERS *pException)
+{
+	// 创建Dump文件  
+	//  
+	HANDLE hDumpFile = CreateFile(lpstrDumpFilePathName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	// Dump信息  
+	//  
+	MINIDUMP_EXCEPTION_INFORMATION dumpInfo;
+	dumpInfo.ExceptionPointers = pException;
+	dumpInfo.ThreadId = GetCurrentThreadId();
+	dumpInfo.ClientPointers = TRUE;
+
+	// 写入Dump文件内容  
+	//  
+	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hDumpFile, MiniDumpNormal, &dumpInfo, NULL, NULL);
+
+	CloseHandle(hDumpFile);
+}
+
+LONG ApplicationCrashHandler(EXCEPTION_POINTERS *pException)
+{
+	// 这里弹出一个错误对话框并退出程序  
+	TCHAR szPath[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, szPath, MAX_PATH);
+	PathRemoveFileSpec(szPath);
+	PathAddBackslash(szPath);
+	PathAppend(szPath, L"minidump.dmp");
+	CreateDumpFile(szPath, pException);
+	FatalAppExit(-1, _T("*** Unhandled Exception! ***"));
+
+	return EXCEPTION_EXECUTE_HANDLER;
 }
 
 int ParseCmdLine(const wchar_t * lpCmdLine, std::map<std::wstring, std::wstring>& pMapCmdLine)
@@ -59,6 +95,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: 在此放置代码。
+	//设置Dump
+	SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);
+
 	CPaintManagerUI::SetInstance(hInstance);
 	CPaintManagerUI::SetResourcePath(GetSkinPath().c_str());
 
@@ -91,6 +130,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		player.ShowModal();
 	}
 	
-	CPaintManagerUI::MessageLoop();
+	//CPaintManagerUI::MessageLoop();
     return 0;
 }

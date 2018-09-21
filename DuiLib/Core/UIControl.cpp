@@ -1135,8 +1135,10 @@ SIZE CControlUI::EstimateSize(SIZE szAvailable)
 
 bool CControlUI::Paint(HDC hDC, const RECT& rcPaint, CControlUI* pStopControl)
 {
-	if (pStopControl == this) return false;
-	if( !::IntersectRect(&m_rcPaint, &rcPaint, &m_rcItem) ) return true;
+	if (pStopControl == this) 
+		return false;
+	if( !::IntersectRect(&m_rcPaint, &rcPaint, &m_rcItem) ) 
+		return true;
 	if( OnPaint ) {
 		if( !OnPaint(this) ) return true;
 	}

@@ -2,6 +2,7 @@
 #include "ipc/ipc_thread.h"
 #include "ipc/ipc_channel.h"
 #include "ipc/ipc_listener.h"
+#include <atomic>
 
 namespace IPC
 {
@@ -13,7 +14,7 @@ namespace IPC
 
 		void Start();
 
-		bool IsConnected() const;
+		bool IsConnected();
 
 		virtual bool Send(Message* message) override;
 
@@ -31,11 +32,10 @@ namespace IPC
 		std::string name_;
 		Thread thread_;
 
-		Channel* channel_;
-		Listener* listener_;
+		Channel* channel_ = nullptr;
+		Listener* listener_ = nullptr;
 		//std::queue
 
-		mutable Lock lock_;
-		bool is_connected_;
+		std::atomic_bool is_connected_;
 	};
 }

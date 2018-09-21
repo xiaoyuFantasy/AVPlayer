@@ -4,7 +4,6 @@
 #include <Shellapi.h>
 #pragma comment(lib, "Shell32.lib")
 
-
 std::wstring StringToWString(const std::string &str)
 {
 	std::wstring wstr(str.length(), L' ');
@@ -66,7 +65,6 @@ void CAVPlayerWnd::OnFinalMessage(HWND hWnd)
 
 void CAVPlayerWnd::InitWindow()
 {
-	
 	m_pVideoLayout = (CWndUI*)m_PaintManager.FindControl(L"video_player");
 	m_pLabelName = (CLabelUI*)m_PaintManager.FindControl(L"video_name");
 	m_pSliderPlay = (CSliderUI*)m_PaintManager.FindControl(L"sliderPlay");
@@ -88,7 +86,6 @@ void CAVPlayerWnd::InitWindow()
 	}
 }
 
-
 void CAVPlayerWnd::Notify(TNotifyUI & msg)
 {
 	if (msg.sType == DUI_MSGTYPE_CLICK)
@@ -103,20 +100,15 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 			{
 				m_pSettingDlg.reset();
 				m_pSettingDlg = std::make_shared<CSettingDialog>();
-				m_pSettingDlg->SetCallback([&](std::wstring wstrPath) {
+				m_pSettingDlg->SetCallback([&](std::wstring wstrPath, int type) {
 					wchar_t szUrl[MAX_PATH + 1] = { 0 };
 					_tcscpy_s(szUrl, MAX_PATH, wstrPath.c_str());
 					::PathStripPath(szUrl);
 					m_pLabelName->SetText(szUrl);
-					m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
-					//m_opts.bEnableAudio = false;
-					//m_opts.bEnableVideo = false;
-					//m_opts.bGpuDecode = true;
+					m_opts.video_type = (VIDEO_TYPE)type;// VIDEO_TYPE::NORMAL_TYPE;
+					m_opts.bEnableAudio = false;
 					m_opts.strPath = CW2A(wstrPath.c_str(), CP_UTF8);
-					//m_opts.hWnd = ::CreateWindowEx(WS_EX_APPWINDOW, L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 0, 0, 400, 300, nullptr, nullptr, m_PaintManager.GetInstance(), nullptr);
-					//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
-					//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
-					//m_opts.strPath = "rtmp://192.168.1.32:1935/live/32";
+					m_pVideo->SetOptions(m_opts);
 					m_pVideo->m_funcOpen(m_pVideo->m_hPlayer, m_opts, true);
 					m_pBtnPlay->SetVisible(false);
 					m_pBtnPause->SetVisible();
@@ -196,12 +188,9 @@ LRESULT CAVPlayerWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lPara
 		m_pSliderPlay->SetEnabled();
 	}
 	else if (uMsg == PLAYER_MSG_PROGRESS)
-	{
 		m_pSliderPlay->SetValue(wParam);
-	}
 	else if (uMsg == PLAYER_MSG_PLAY)
 		m_pVideo->m_funcPlay(m_pVideo->m_hPlayer);
-
 	
 	return __super::HandleCustomMessage(uMsg, wParam, lParam, bHandled);
 }
@@ -232,11 +221,18 @@ int CAVPlayerWnd::ParseCmdLine(const wchar_t * lpCmdLine, std::map<std::wstring,
 	return 0;
 }
 
-void CAVPlayerWnd::FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T *pData)
+void CAVPlayerWnd::FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, LPVOID pData)
 {
 	CAVPlayerWnd * pAvPlayer = (CAVPlayerWnd*)user_data;
+	pAvPlayer->m_mutexCallback.lock();
 	if (PlayerOpening == e)
 		::PostMessage(pAvPlayer->GetHWND(), PLAYER_MSG_PLAY, (WPARAM)0, (LPARAM)0);
+	else if (PlayerError == e)
+	{
+		PlayerErrorSt* pSt = (PlayerErrorSt*)pData;
+		pAvPlayer->m_pVideo->m_pLabelMsg->SetText(CA2W(pSt->strErrMsg.c_str(), CP_UTF8));
+	}
+	pAvPlayer->m_mutexCallback.unlock();
 }
 
 void CAVPlayerWnd::DurationCallback(void * userdata, int64_t duration)

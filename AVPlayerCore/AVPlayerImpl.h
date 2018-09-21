@@ -68,10 +68,11 @@ public:
 
 protected:
 	static int interrupt_callback(void * lparam);
-	void OnOpen(bool IsHasAuido, bool IsHasVideo);
+	void CallbackEvent(PLAYER_EVENT e, LPVOID lpData);
 
 private:
 	PLAYER_OPTS		m_opts;
+	std::mutex		m_mutexEvent;
 	AVFormatContext*	m_pFormatCtx = nullptr;
 	int64_t				m_duration = 0;
 	std::atomic<PLAY_STATUS> m_statusPlayer = PLAY_STATUS::NoneStatus;

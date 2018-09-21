@@ -35,3 +35,6 @@ using namespace DuiLib;
 #define PLAYER_MSG_PROGRESS (WM_USER + 2)
 #define PLAYER_MSG_PLAY		(WM_USER + 3)
 #define PLAYER_MSG_OPEN		(WM_USER + 4)
+#define PLAYER_MSG_ERROR	(WM_USER + 5)
+#define PLAYER_MSG_CLOSE	(WM_USER + 6)
+#define PLAYER_MSG_SELECT	(WM_USER + 7)

@@ -18,6 +18,8 @@ namespace DuiLib
 		UINT GetControlFlags() const;
 		HWND GetNativeWindow() const;
 
+		void Init();
+
 		SYSTEMTIME& GetTime();
 		void SetTime(SYSTEMTIME* pst);
 
@@ -30,12 +32,20 @@ namespace DuiLib
         void Move(SIZE szOffset, bool bNeedInvalidate = true);
 
 		void DoEvent(TEventUI& event);
+		void SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue);
 
 	protected:
+		void SetCalendarStyle(bool bShow);
+		bool GetCalendarStyle();
+		void SetTimeStyle(bool bShow);
+		bool GetTimeStyle();
+
+	private:
 		SYSTEMTIME m_sysTime;
 		int        m_nDTUpdateFlag;
 		bool       m_bReadOnly;
-
+		bool	   m_bTimeStyle = false;
+		bool       m_bCalendarStyle = true;
 		CDateTimeWnd* m_pWindow;
 	};
 }

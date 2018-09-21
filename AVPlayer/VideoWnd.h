@@ -25,7 +25,9 @@ public:
 
 	void SetCmdLine(std::map<std::wstring, std::wstring> &mapCmd);
 	void Play();
+	void SetOptions(PLAYER_OPTS &opts);
 	void Stop();
+	void SetDragEnable(bool bEnable);
 
 	bool OnMessageReceived(IPC::Message* msg);
 	void OnChannelConnected(int32 peer_pid);
@@ -44,11 +46,12 @@ protected:
 	void ParseCommandLine();
 	void InitIPC();
 	void Send(const std::string& cmd);
-	static void FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T *pData);
+	static void FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, LPVOID pData);
 
 public:
 	PLAYER_OPTS		m_opts;
 	std::map<std::wstring, std::wstring> m_mapCmd;
+	bool			m_bLockScreenPlayedPre = false;
 	HMODULE			m_hPlayerModule = NULL;
 	funcInit		m_funcInit = nullptr;
 	funcUnInit		m_funcUnInit = nullptr;
@@ -85,8 +88,10 @@ public:
 	int		m_nIndex = 0;
 	std::wstring m_wstrPlayUrl;
 	std::wstring m_wstrChannelName;
-
 	//ipc
 	std::shared_ptr<IPC::Endpoint> m_pEndpoint;
+	//control
+	CLabelUI*	m_pLabelMsg = nullptr;
+	CVerticalLayoutUI*	m_pVideoLayout = nullptr;
 };
 

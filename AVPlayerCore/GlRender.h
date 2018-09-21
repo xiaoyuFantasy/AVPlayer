@@ -2,9 +2,15 @@
 #include "RenderDefine.h"
 #include <shader.h>
 #include <camera.h>
-#include <glad\glad.h>
-#pragma comment(lib, "Opengl32.lib")
+#ifdef GLAD
+#include <glad/glad.h>
 #pragma comment(lib, "glad.lib")
+#endif // GLAD
+
+#ifdef GLEW
+#include <GL\glew.h>
+#endif // GLEW
+#pragma comment(lib, "Opengl32.lib")
 
 
 class CGlRender : public IRender
@@ -19,7 +25,7 @@ public:
 	void DestoryRender() override;
 	bool SetRenderMode(RENDER_MODE) override;
 	void SetRenderSize(int width, int height) override;
-	void RenderFrameData(FramePtr pFrame) override;
+	void RenderFrameData(AVFrame *pFrame) override;
 	void SetScale(float factor) override;
 	void SetRotate(float x, float y) override;
 	void SetScroll(float latitude, float longitude) override;

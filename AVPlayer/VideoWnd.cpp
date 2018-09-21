@@ -2,6 +2,8 @@
 #include "VideoWnd.h"
 #include "ipc/ipc_message.h"
 #include "misc\AES_Encryptor.h"
+#include <Wtsapi32.h>
+#pragma comment(lib, "Wtsapi32.lib")
 
 #define IPC_TIMEOUT (WM_USER + 1)
 
@@ -82,7 +84,8 @@ void CVideoWnd::InitWindow()
 {
 	ParseCommandLine();
 	InitIPC();
-
+	m_pVideoLayout = (CVerticalLayoutUI*)m_PaintManager.FindControl(_T("video_layout"));
+	m_pLabelMsg = (CLabelUI*)m_PaintManager.FindControl(L"msg");
 	m_hPlayerModule = LoadLibrary(L"AVPlayerCore.dll");
 	if (m_hPlayerModule)
 	{
@@ -114,37 +117,44 @@ void CVideoWnd::InitWindow()
 		m_hPlayer = m_funcCreatePlayer();
 	}
 	else
+	{
 		int err = GetLastError();
+		m_pLabelMsg->SetText(L"Load AVPlayerCore.dll Failed!!!");
+	}
+
+	::WTSRegisterSessionNotification(m_hWnd, NOTIFY_FOR_ALL_SESSIONS);
 }
 
 void CVideoWnd::Notify(TNotifyUI & msg)
 {
 	if (msg.sType == DUI_MSGTYPE_MENU)
 	{
-		if (m_funcStatus(m_hPlayer) == PlayingStatus)
-			Send("video_menu");
+		Send("video_menu");
 	}
 	else if (msg.sType == DUI_MSGTYPE_DRAG)
 	{
-		SdkDataObject* dataObj = (SdkDataObject*)msg.wParam;
-		string strDeviceJson = "{\"data\":"+ to_string(m_nIndex) +",\"type\":2}";
-		char *key = "D464E60E9A2F4FFA";
-		AesEncryptor aes((unsigned char*)key);
-		string strEncipher = aes.EncryptString(strDeviceJson);
+		if (_tcscmp(msg.pSender->GetName(), _T("video_layout")) == 0)
+		{
+			SdkDataObject* dataObj = (SdkDataObject*)msg.wParam;
+			string strDeviceJson = "{\"data\":" + to_string(m_nIndex) + ",\"type\":2}";
+			char *key = "D464E60E9A2F4FFA";
+			AesEncryptor aes((unsigned char*)key);
+			string strEncipher = aes.EncryptString(strDeviceJson);
 
-		FORMATETC fmtetc = { 0 };
-		fmtetc.dwAspect = DVASPECT_CONTENT;
-		fmtetc.lindex = -1;
-		fmtetc.cfFormat = CF_TEXT;
-		fmtetc.tymed = TYMED_HGLOBAL;
-		STGMEDIUM medium = { 0 };
-		medium.tymed = TYMED_HGLOBAL;
-		medium.hGlobal = GlobalAlloc(GMEM_MOVEABLE, strEncipher.length() + 1);
-		char * buff = (char*)GlobalLock(medium.hGlobal);
-		strcpy(buff, strEncipher.c_str());
-		GlobalUnlock(medium.hGlobal);
-		HRESULT hr = dataObj->SetData(&fmtetc, &medium, FALSE);
-		return;
+			FORMATETC fmtetc = { 0 };
+			fmtetc.dwAspect = DVASPECT_CONTENT;
+			fmtetc.lindex = -1;
+			fmtetc.cfFormat = CF_TEXT;
+			fmtetc.tymed = TYMED_HGLOBAL;
+			STGMEDIUM medium = { 0 };
+			medium.tymed = TYMED_HGLOBAL;
+			medium.hGlobal = GlobalAlloc(GMEM_MOVEABLE, strEncipher.length() + 1);
+			char * buff = (char*)GlobalLock(medium.hGlobal);
+			strcpy(buff, strEncipher.c_str());
+			GlobalUnlock(medium.hGlobal);
+			HRESULT hr = dataObj->SetData(&fmtetc, &medium, FALSE);
+			return;
+		}
 	}
 
 	__super::Notify(msg);
@@ -162,8 +172,16 @@ void CVideoWnd::Play()
 	m_opts.hInstance = m_PaintManager.GetInstance();
 	m_opts.funcEvent = CVideoWnd::FuncPlayerEvent;
 	m_opts.video_type = (VIDEO_TYPE)m_nVideoType;
+	if (m_opts.video_type == VIDEO_TYPE::PANORAMIC_TYPE)
+		m_opts.bEnableAudio = false;
+
 	m_opts.strPath = CW2A(m_wstrPlayUrl.c_str(), CP_UTF8);
 	::PostMessage(m_hWnd, PLAYER_MSG_OPEN, NULL, NULL);
+}
+
+void CVideoWnd::SetOptions(PLAYER_OPTS & opts)
+{
+	m_opts = opts;
 }
 
 void CVideoWnd::Stop()
@@ -171,28 +189,45 @@ void CVideoWnd::Stop()
 	m_funcStop(m_hPlayer);
 }
 
+void CVideoWnd::SetDragEnable(bool bEnable)
+{
+	if (PANORAMIC_TYPE != m_opts.video_type)
+		m_pVideoLayout->SetDragEnabled(true);
+}
+
 LRESULT CVideoWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (uMsg == WM_MOUSEWHEEL)
 	{
-		double fwKeys = GET_KEYSTATE_WPARAM(wParam);
-		double zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		m_funcSetScale(m_hPlayer, (float)zDelta / 120);
+		if (PANORAMIC_TYPE == m_opts.video_type)
+		{
+			double fwKeys = GET_KEYSTATE_WPARAM(wParam);
+			double zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+			m_funcSetScale(m_hPlayer, (float)zDelta / 120);
+		}
 	}
 	else if (uMsg == WM_LBUTTONDOWN)
 	{
-		m_bLButtonDown = true;
-		SetCapture(m_hWnd);
-		POINT pt;
-		::GetCursorPos(&pt);
-		::ClientToScreen(m_hWnd, &pt);
-		m_xPos = pt.x;
-		m_yPos = pt.y;
+		if (PANORAMIC_TYPE == m_opts.video_type)
+		{
+			m_bLButtonDown = true;
+			SetCapture(m_hWnd);
+			POINT pt;
+			::GetCursorPos(&pt);
+			::ClientToScreen(m_hWnd, &pt);
+			m_xPos = pt.x;
+			m_yPos = pt.y;
+		}
+
+		Send("video_lbtndown");
 	}
 	else if (uMsg == WM_LBUTTONUP)
 	{
-		ReleaseCapture();
-		m_bLButtonDown = false;
+		if (PANORAMIC_TYPE == m_opts.video_type)
+		{
+			ReleaseCapture();
+			m_bLButtonDown = false;
+		}
 	}
 	else if (uMsg == WM_MOUSEMOVE)
 	{
@@ -212,7 +247,26 @@ LRESULT CVideoWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		Close();
 	else if (uMsg == WM_LBUTTONDBLCLK)
 		Send("video_dbclick");
-
+	else if (uMsg == WM_MOUSEHOVER)
+		Send("video_mousehover");
+	else if (uMsg == WM_MOUSELEAVE)
+		Send("video_mouseleave");
+	else if (WM_WTSSESSION_CHANGE == uMsg)
+	{
+		if (WTS_SESSION_LOCK == wParam)
+		{
+			if (m_funcStatus(m_hPlayer) != NoneStatus)
+			{
+				m_bLockScreenPlayedPre = true;
+				m_funcClose(m_hPlayer);
+			}
+			else
+				m_bLockScreenPlayedPre = false;
+		}
+		if (WTS_SESSION_UNLOCK == wParam && m_bLockScreenPlayedPre)
+			::PostMessage(m_hWnd, PLAYER_MSG_OPEN, NULL, NULL);
+	}
+		
 	return __super::HandleMessage(uMsg, wParam, lParam);
 }
 
@@ -226,11 +280,12 @@ LRESULT CVideoWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 		if (m_funcOpen)
 			m_funcOpen(m_hPlayer, m_opts, true);
 	}
+
 	if (uMsg == PLAYER_MSG_PLAY)
-	{
 		m_funcPlay(m_hPlayer);
-		m_PaintManager.SetDropEnable(true);
-	}
+	else if (uMsg == PLAYER_MSG_CLOSE && !m_bLockScreenPlayedPre)
+		Send("video_closed");
+
 	return S_OK;
 }
 
@@ -344,13 +399,18 @@ void CVideoWnd::Send(const std::string & cmd)
 		m_pEndpoint->Send(m.get());
 }
 
-void CVideoWnd::FuncPlayerEvent(void * user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T * pData)
+void CVideoWnd::FuncPlayerEvent(void * user_data, const PLAYER_EVENT e, LPVOID pData)
 {
 	CVideoWnd * pAvPlayer = (CVideoWnd*)user_data;
 	if (PlayerOpening == e)
 		::PostMessage(pAvPlayer->GetHWND(), PLAYER_MSG_PLAY, (WPARAM)0, (LPARAM)0);
 	else if (PlayerClosed == e)
-		pAvPlayer->Send("video_closed");
+		::PostMessage(pAvPlayer->GetHWND(), PLAYER_MSG_CLOSE, (WPARAM)0, (LPARAM)0);
+	else if (PlayerError == e)
+	{
+		PlayerErrorSt* pSt = (PlayerErrorSt*)pData;
+		pAvPlayer->m_pLabelMsg->SetText(CA2W(pSt->strErrMsg.c_str(), CP_UTF8));
+	}
 }
 
 

@@ -127,8 +127,8 @@ m_nOpacity(0xFF),
 m_bLayered(false),
 m_bLayeredChanged(false),
 m_bDragMode(false),
-m_bDropEnable(false),
-m_pDropTarget(nullptr)
+m_bDropEnable(false)
+//m_pDropTarget(nullptr)
 {
 	if (m_SharedResInfo.m_DefaultFontInfo.sFontName.IsEmpty())
 	{
@@ -180,10 +180,11 @@ m_pDropTarget(nullptr)
 
 CPaintManagerUI::~CPaintManagerUI()
 {
-	if (m_pDropTarget)
+	/*if (m_pDropTarget)
 	{
 		m_pDropTarget->Release();
-	}
+		delete m_pDropTarget;
+	}*/
 
     // Delete the control-tree structures
     for( int i = 0; i < m_aDelayedCleanup.GetSize(); i++ ) static_cast<CControlUI*>(m_aDelayedCleanup[i])->Delete();
@@ -229,7 +230,7 @@ void CPaintManagerUI::Init(HWND hWnd, LPCTSTR pstrName)
 	m_sName.Empty();
 	if( pstrName != NULL ) m_sName = pstrName;
 
-	m_pDropTarget = new CDropTargetEx;
+	//m_pDropTarget = new CDropTargetEx;
 
 	if( m_hWndPaint != hWnd ) {
 		m_hWndPaint = hWnd;
@@ -1884,9 +1885,12 @@ void CPaintManagerUI::SetFocus(CControlUI* pControl, bool bFocusWnd)
 
 void CPaintManagerUI::SetFocusNeeded(CControlUI* pControl)
 {
-    if (!m_bNoActivate) ::SetFocus(m_hWndPaint);
-    if( pControl == NULL ) return;
-    if( m_pFocus != NULL ) {
+    if (!m_bNoActivate) 
+		::SetFocus(m_hWndPaint);
+    if( pControl == NULL ) 
+		return;
+    if( m_pFocus != NULL ) 
+	{
         TEventUI event = { 0 };
         event.Type = UIEVENT_KILLFOCUS;
         event.pSender = pControl;
@@ -1900,7 +1904,8 @@ void CPaintManagerUI::SetFocusNeeded(CControlUI* pControl)
     info.bForward = false;
     m_pFocus = m_pRoot->FindControl(__FindControlFromTab, &info, UIFIND_VISIBLE | UIFIND_ENABLED | UIFIND_ME_FIRST);
     m_bFocusNeeded = true;
-    if( m_pRoot != NULL ) m_pRoot->NeedUpdate();
+    if( m_pRoot != NULL ) 
+		m_pRoot->NeedUpdate();
 }
 
 bool CPaintManagerUI::SetTimer(CControlUI* pControl, UINT nTimerID, UINT uElapse)
@@ -3046,7 +3051,7 @@ bool CPaintManagerUI::SetDropEnable(bool bDrop)
 	HRESULT hRet = S_OK;
 	if (bDrop)
 	{
-		hRet = m_pDropTarget->DragDropRegister(m_hWndPaint, this);
+		hRet = m_dropTarget.DragDropRegister(m_hWndPaint, this);
 		if (hRet == S_OK)
 		{
 			m_bDropEnable = true;
@@ -3058,7 +3063,7 @@ bool CPaintManagerUI::SetDropEnable(bool bDrop)
 	}
 	else
 	{
-		hRet = m_pDropTarget->DragDropRevoke(m_hWndPaint);
+		hRet = m_dropTarget.DragDropRevoke(m_hWndPaint);
 		m_bDropEnable = false;
 	}
 	return SUCCEEDED(hRet);

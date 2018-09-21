@@ -23,7 +23,7 @@ public:
 
 protected:
 	int ParseCmdLine(const wchar_t* lpCmdLine, std::map<std::wstring, std::wstring>& pMapCmdLine);
-	static void FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, const PLAYER_EVENT_T *pData);
+	static void FuncPlayerEvent(void* user_data, const PLAYER_EVENT e, LPVOID pData);
 	static void DurationCallback(void *userdata, int64_t duration);
 	static void ProgressCallback(void *userdata, int64_t progress);
 	static void VideoCallback(void *userdata, int nWidth, int nHeight);
@@ -47,5 +47,6 @@ private:
 	CSliderUI*	m_pSliderVolume = nullptr;
 	float		m_scale = 0.5f;
 	std::map<std::wstring, std::wstring>	m_mapCmd;
+	std::mutex	m_mutexCallback;
 };
 

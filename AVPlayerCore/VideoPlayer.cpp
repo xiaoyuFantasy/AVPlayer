@@ -178,15 +178,19 @@ bool CVideoPlayer::CreateDecoder()
 		if (m_pHWDeviceCtx)
 			av_buffer_unref(&m_pHWDeviceCtx);
 
-		AVHWDeviceType nHWTypes[3] = { AV_HWDEVICE_TYPE_DXVA2 , AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_CUDA };
-		for (size_t i = 0; i < sizeof(nHWTypes); i++)
+		AVHWDeviceType nHWTypes[3] = { AV_HWDEVICE_TYPE_DXVA2, AV_HWDEVICE_TYPE_CUDA,  AV_HWDEVICE_TYPE_D3D11VA };
+		for (size_t i = 0; i < 1/*sizeof(nHWTypes)*/; i++)
 		{
-			if ((ret = av_hwdevice_ctx_create(&m_pHWDeviceCtx, nHWTypes[i], NULL, NULL, 0)) == 0)
+			if ((ret = av_hwdevice_ctx_create(&m_pHWDeviceCtx, AV_HWDEVICE_TYPE_QSV, NULL, NULL, 0)) == 0)
 			{
+				av_log(NULL, AV_LOG_INFO, "create hw device ctx index:%d.", i);
 				m_pCodecCtx->hw_device_ctx = av_buffer_ref(m_pHWDeviceCtx);
 				m_typeCodec = nHWTypes[i];
+				m_opts.bGpuDecode = true;
+				m_pDecoder->SetRenderCallback(std::bind(&CVideoPlayer::RenderFrame, this, std::placeholders::_1));
 				break;
 			}
+			m_opts.bGpuDecode = false;
 		}
 	}
 
@@ -211,6 +215,9 @@ void CVideoPlayer::DecodeThread()
 		av_log(NULL, AV_LOG_INFO, "Video Decode Thread");
 		if (!m_pCodecCtx)
 			return;
+
+		if (m_opts.bGpuDecode)
+			CreateRender();
 
 		while (!m_bStopDecode && !m_bQuit)
 		{
@@ -240,7 +247,8 @@ void CVideoPlayer::DecodeThread()
 				//	diff_average = diff_count / double(frame_count);
 				//	//av_log(NULL, AV_LOG_INFO, "pts:%d, diff:%f, frame pts:%d", pts, diff_average, pFrame->pts/1000);
 				//}
-				m_queueFrame.Push(std::move(pFrame));
+				if (!m_opts.bGpuDecode)
+					m_queueFrame.Push(std::move(pFrame));
 			}
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -252,70 +260,96 @@ void CVideoPlayer::DecodeThread()
 
 void CVideoPlayer::RenderThread()
 {
-	m_threadRender = std::thread([&]() {
-		av_log(NULL, AV_LOG_INFO, "Video Render Thread");
-		if (m_pRender)
-			m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? m_pCodecCtx->pix_fmt : AV_PIX_FMT_NV12);
-		
-		while (!m_bStopRender && !m_bQuit)
-		{
-			if (m_bPause)
+	if (!m_opts.bGpuDecode)
+	{
+		m_threadRender = std::thread([&]() {
+			av_log(NULL, AV_LOG_INFO, "Video Render Thread");
+			CreateRender();
+
+			while (!m_bStopRender && !m_bQuit)
 			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				continue;
-			}
-
-			FramePtr pFrame{ nullptr, [](AVFrame* p) { av_frame_free(&p); } };
-			if (m_queueFrame.Pop(pFrame))
-			{
-				double video_pts = 0; //当前视频的pts
-				if (pFrame->pts == AV_NOPTS_VALUE && pFrame->opaque && *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE)
-					video_pts = *(int64_t *)pFrame->opaque;
-				else if (pFrame->pts != AV_NOPTS_VALUE)
-					video_pts = pFrame->pts;
-				else
-					video_pts = 0;
-
-				video_pts *= av_q2d(m_pStream->time_base);
-				video_pts = SyncVideo(pFrame.get(), video_pts);
-
-				if (m_pClockMgr->GetAudioClock() > 0)
-				{
-					double audio_pts;//音频pts
-					while (!m_bStopRender && !m_bPause && !m_bQuit)
-					{
-						audio_pts = m_pClockMgr->GetAudioClock();
-						//av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
-						if (video_pts <= audio_pts)
-							break;
-
-						int delayTime = (video_pts - audio_pts) * 1000;
-						delayTime = delayTime > 5 ? 5 : delayTime;
-						std::this_thread::sleep_for(std::chrono::milliseconds(delayTime));
-					}
-				}
-				else
-				{
-					float delay = SmoothVideo(pFrame.get(), m_queuePacket.Count());
-					::Sleep(delay);
-				}
-
 				if (m_bPause)
 				{
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 					continue;
 				}
+
+				FramePtr pFrame{ nullptr, [](AVFrame* p) { av_frame_free(&p); } };
+				if (m_queueFrame.Pop(pFrame))
+					RenderFrame(pFrame.get());
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			}
 
 			if (m_pRender)
-				m_pRender->RenderFrameData(std::move(pFrame));
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
-		}
+				m_pRender->DestoryRender();
+			av_log(NULL, AV_LOG_INFO, "Video Render Thread End!!!");
+		});
+	}
+}
 
-		if (m_pRender)
-			m_pRender->DestoryRender();
-		av_log(NULL, AV_LOG_INFO, "Video Render Thread End!!!");
-	});
+bool CVideoPlayer::CreateRender()
+{
+	if (m_pRender)
+	{
+		bool bRet = m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? m_pCodecCtx->pix_fmt : AV_PIX_FMT_NV12);
+		if (!bRet && m_opts.funcEvent)
+		{
+			PlayerErrorSt err;
+			err.nCode = GlCreateError;
+			err.strErrMsg = "create gl render failed!!!";
+			m_opts.funcEvent(m_opts.user_data, PlayerError, &err);
+		}
+		return bRet;
+	}
+	return false;
+}
+
+void CVideoPlayer::RenderFrame(AVFrame *pFrame)
+{
+	double video_pts = 0; //当前视频的pts
+	if (pFrame->pts == AV_NOPTS_VALUE && pFrame->opaque && *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE)
+		video_pts = *(int64_t *)pFrame->opaque;
+	else if (pFrame->pts != AV_NOPTS_VALUE)
+		video_pts = pFrame->pts;
+	else
+		video_pts = 0;
+
+	video_pts *= av_q2d(m_pStream->time_base);
+	video_pts = SyncVideo(pFrame, video_pts);
+
+	if (m_pClockMgr->GetAudioClock() > 0)
+	{
+		double audio_pts;//音频pts
+		while (!m_bStopRender && !m_bPause && !m_bQuit)
+		{
+			audio_pts = m_pClockMgr->GetAudioClock();
+			//av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
+			if (video_pts <= audio_pts)
+				break;
+
+			int delayTime = (video_pts - audio_pts) * 1000;
+			delayTime = delayTime > 5 ? 5 : delayTime;
+			std::this_thread::sleep_for(std::chrono::milliseconds(delayTime));
+		}
+	}
+	else
+	{
+		float delay = SmoothVideo(pFrame, m_queuePacket.Count());
+		/*DWORD dwNext = GetTickCount();
+		av_log(NULL, AV_LOG_INFO, "queue count:%d, delay:%d", m_queuePacket.Count(), dwNext - dwBefore);
+		dwBefore = dwNext;*/
+		::Sleep(delay);
+	}
+
+	if (m_bPause)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		return;
+	}
+
+	if (m_pRender)
+		m_pRender->RenderFrameData(pFrame);
 }
 
 double CVideoPlayer::SyncVideo(AVFrame * frame, double pts)

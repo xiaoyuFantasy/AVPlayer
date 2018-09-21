@@ -13,7 +13,7 @@ public:
 	void DestoryRender() override;
 	bool SetRenderMode(RENDER_MODE) override;
 	void SetRenderSize(int width, int height) override;
-	void RenderFrameData(FramePtr pFrame) override;
+	void RenderFrameData(AVFrame *pFrame) override;
 	void SetScale(float factor) override;
 	void SetRotate(float x, float y) override;
 	void SetScroll(float latitude, float longitude) override;

@@ -169,7 +169,7 @@ namespace DuiLib
 
 	protected:
 		LPVOID* m_ppVoid;
-		int m_nCount;
+		int m_nCount = 0;
 		int m_nAllocated;
 	};
 

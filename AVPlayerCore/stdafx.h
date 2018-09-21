@@ -37,6 +37,8 @@ extern "C" {
 #include <Objbase.h>
 #pragma comment(lib, "Ole32.lib")
 
+#define STRINGIFY(A)					#A
+
 using PacketPtr = std::unique_ptr<AVPacket, std::function<void(AVPacket*)>>;
 using FramePtr = std::unique_ptr<AVFrame, std::function<void(AVFrame*)>>;
 using PacketQueue = CQueue<PacketPtr>;

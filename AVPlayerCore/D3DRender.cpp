@@ -140,7 +140,7 @@ void CD3DRender::SetRenderSize(int width, int height)
 {
 }
 
-void CD3DRender::RenderFrameData(FramePtr pFrame)
+void CD3DRender::RenderFrameData(AVFrame *pFrame)
 {
 	if (!pFrame)
 		return;

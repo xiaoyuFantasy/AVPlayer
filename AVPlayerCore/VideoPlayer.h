@@ -34,6 +34,8 @@ protected:
 	bool CreateDecoder();
 	void DecodeThread();
 	void RenderThread();
+	bool CreateRender();
+	void RenderFrame(AVFrame *pFrame);
 
 	double SyncVideo(AVFrame *frame, double pts);
 	float SmoothVideo(AVFrame* frame, int size);

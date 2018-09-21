@@ -17,6 +17,7 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 	if (m_bOpened || m_bOpening)
 		return false;
 
+	m_statusPlayer = OpeningStatus;
 	m_bStop = false;
 	m_opts = opts;
 	m_bOpening = true;
@@ -55,7 +56,7 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 		if (ret != 0)
 		{
 			av_log(NULL, AV_LOG_ERROR, "can not open the file. err_code:%d", ret);
-			return false;
+			goto OPEN_ERROR;
 		}
 
 		if ((ret = avformat_find_stream_info(m_pFormatCtx, nullptr)) < 0)
@@ -90,6 +91,10 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 			if (!m_pRender)
 				m_pRender = CRenderFactory::getSingleModule().CreateRender("opengl");
 			m_pRender->InitRender();
+			if (1 == m_opts.video_type)
+				m_pRender->SetRenderMode(RENDER_MODE::PANO2D);
+			else
+				m_pRender->SetRenderMode(RENDER_MODE::STANDARD);
 			m_videoPlayer.SetRender(m_pRender);
 			m_videoPlayer.SetStream(m_pFormatCtx->streams[m_nVideoIndex]);
 			m_videoPlayer.SetClockMgr(&m_clockMgr);
@@ -113,16 +118,26 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 				m_duration = m_pFormatCtx->streams[m_nAudioIndex]->duration * av_q2d(m_pFormatCtx->streams[m_nAudioIndex]->time_base);
 		}
 
+		m_statusPlayer = OpenedStatus;
+		PlayerOpenSt st;
+		st.duration = m_duration;
+		st.IsHasAudio = m_bAudioOpen;
+		st.IsHasVideo = m_bVideoOpen;
+		CallbackEvent(PlayerOpening, &st);
 		m_bOpened = true;
 		m_bOpening = false;
-		m_statusPlayer = OpenedStatus;
-		OnOpen(m_nAudioIndex > 0 ? true : false, m_nVideoIndex > 0 ? true : false);
 		return true;
 
 	OPEN_ERROR:
 		avformat_close_input(&m_pFormatCtx);
 		if (m_pFormatCtx)
 			avformat_free_context(m_pFormatCtx);
+
+		PlayerErrorSt err;
+		err.nCode = ret;
+		err.strErrMsg = "open input failed!!! url:" + m_opts.strPath;
+		CallbackEvent(PlayerError, &err);
+		m_bOpening = false;
 		return false;
 	});
 
@@ -179,6 +194,11 @@ bool CAVPlayerImpl::Play()
 				if (ret == AVERROR_EOF || avio_feof(m_pFormatCtx->pb))
 					av_log(NULL, AV_LOG_ERROR, "av_read_frame failed eof error!!!");
 				std::this_thread::sleep_for(std::chrono::seconds(1));
+
+				PlayerErrorSt err;
+				err.nCode = ret;
+				err.strErrMsg = "read frame failed!!! url:" + m_opts.strPath;
+				CallbackEvent(PlayerError, &err);
 				continue;
 			}
 
@@ -188,7 +208,7 @@ bool CAVPlayerImpl::Play()
 			if (m_bAudioOpen && packet->stream_index == m_nAudioIndex)
 				m_audioPlayer.PushPacket(move(packet));
 			else if (m_bVideoOpen && packet->stream_index == m_nVideoIndex)
-				m_videoPlayer.PushPacket(move(packet));
+				m_videoPlayer.PushPacket(move(packet));				
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
@@ -323,8 +343,10 @@ int CAVPlayerImpl::interrupt_callback(void * lparam)
 	return 0;
 }
 
-void CAVPlayerImpl::OnOpen(bool IsHasAuido, bool IsHasVideo)
+void CAVPlayerImpl::CallbackEvent(PLAYER_EVENT e, LPVOID lpData)
 {
+	CAutoLock lock(m_mutexEvent);
 	if (m_opts.funcEvent)
-		m_opts.funcEvent(m_opts.user_data, PlayerOpening, nullptr);
+		m_opts.funcEvent(m_opts.user_data, e, lpData);
 }
+

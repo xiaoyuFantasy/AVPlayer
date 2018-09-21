@@ -1,7 +1,14 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#ifdef GLAD
 #include <glad/glad.h>
+#endif // GLAD
+
+#ifdef GLEW
+#include <GL\glew.h>
+#endif // GLEW
+
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 
