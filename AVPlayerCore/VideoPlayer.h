@@ -4,6 +4,7 @@
 #include "DecoderDefine.h"
 #include "AVPlayerDefine.h"
 #include "ClockMgr.h"
+#include <d3d9.h>
 
 #define MAX_VIDEO_SIZE (256) //25 * 256 * 1024
 
@@ -36,7 +37,7 @@ protected:
 	void RenderThread();
 	bool CreateRender();
 	void RenderFrame(AVFrame *pFrame);
-
+	void HwRenderFrame(AVFrame *pFrame);
 	double SyncVideo(AVFrame *frame, double pts);
 	float SmoothVideo(AVFrame* frame, int size);
 
@@ -62,12 +63,13 @@ private:
 	FrameQueue			m_queueFrame;
 	AVHWDeviceType		m_typeCodec = AV_HWDEVICE_TYPE_NONE;
 	AVBufferRef*		m_pHWDeviceCtx = nullptr;
+	IDirect3DSurface9*	m_pDirect3DSurfaceRender = NULL;
+
 	AVPixelFormat		m_hwPixelFormat;
 	double				m_clock = 0.0;
 
 	std::thread			m_threadDecode;
 	std::thread			m_threadRender;
-
 	std::shared_ptr<IRender> m_pRender = nullptr;
 	std::shared_ptr<IDecoder> m_pDecoder = nullptr;
 	CClockMgr*			m_pClockMgr = nullptr;

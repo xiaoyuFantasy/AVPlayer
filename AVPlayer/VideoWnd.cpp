@@ -284,7 +284,7 @@ LRESULT CVideoWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 	if (uMsg == PLAYER_MSG_PLAY)
 		m_funcPlay(m_hPlayer);
 	else if (uMsg == PLAYER_MSG_CLOSE && !m_bLockScreenPlayedPre)
-		Send("video_closed");
+		Close();
 
 	return S_OK;
 }
@@ -376,7 +376,7 @@ bool CVideoWnd::OnMessageReceived(IPC::Message * msg)
 	else if (strCmd.compare("video_play") == 0)
 		Play();
 	else if (strCmd.compare("video_stop") == 0)
-		Stop();
+		::ShowWindow(m_hWnd, SW_HIDE);//Stop();
 
 	return true;
 }
@@ -388,7 +388,7 @@ void CVideoWnd::OnChannelConnected(int32 peer_pid)
 
 void CVideoWnd::OnChannelError()
 {
-	Close();
+	Stop();
 }
 
 void CVideoWnd::Send(const std::string & cmd)

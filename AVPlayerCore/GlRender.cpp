@@ -132,7 +132,7 @@ void CGlRender::RenderFrameData(AVFrame *pFrame)
 	if (!m_pShader->checkSuccess())
 		return;
 
-	if (m_nVideoWidth != pFrame->width || m_nVideoHeight != pFrame->height || pFrame->format != m_nPixelFormat)
+	if (m_nVideoWidth != pFrame->width || m_nVideoHeight != pFrame->height || pFrame->format != m_nPixelFormat || !m_pSwsCtx)
 	{
 		m_nVideoWidth = pFrame->width;
 		m_nVideoHeight = pFrame->height;
@@ -463,6 +463,7 @@ bool CGlRender::CreateSwsCtx()
 	if (m_pSwsCtx)
 		sws_freeContext(m_pSwsCtx);
 
+	m_pSwsCtx = nullptr;
 	m_pSwsCtx = sws_getContext(
 		m_nVideoWidth,
 		m_nVideoHeight,

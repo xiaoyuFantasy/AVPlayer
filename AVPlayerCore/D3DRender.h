@@ -24,6 +24,8 @@ protected:
 
 
 private:
+	HMODULE					m_hD3d = nullptr;
+	HMODULE					m_hDxva2 = nullptr;
 	HWND					m_hWnd = nullptr;
 	int						m_nVideoWidth = 0;
 	int						m_nVideoHeight = 0;
@@ -32,6 +34,7 @@ private:
 	IDirect3D9 *			m_pDirect3D9 = NULL;
 	IDirect3DDevice9 *		m_pDirect3DDevice = NULL;
 	IDirect3DSurface9 *		m_pDirect3DSurfaceRender = NULL;
+	D3DPRESENT_PARAMETERS	m_d3dpp = { 0 };
 	//×ª»»
 	SwsContext*			m_pSwsCtx = nullptr;
 	uint8_t*			m_pVideoBuffer = nullptr;

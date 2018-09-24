@@ -81,8 +81,9 @@ bool CQueue<T>::Push(T && data)
 		if (Count() >= m_size)
 			m_cvFull.wait(lock);
 		{
-			CAutoLock lock(m_mutexQueue);
+			m_mutexQueue.lock();
 			m_queue.push(std::move(data));
+			m_mutexQueue.unlock();
 		}
 		m_cvEmpty.notify_one();
 		return true;
@@ -100,9 +101,14 @@ bool CQueue<T>::Pop(T & data)
 		if (Count() == 0)
 			m_cvEmpty.wait(lock);
 		{
-			CAutoLock autolock(m_mutexQueue);
-			data = std::move(m_queue.front());
-			m_queue.pop();
+			CAutoLock lock(m_mutexQueue);
+			if (m_queue.size() > 0)
+			{
+				data = std::move(m_queue.front());
+				m_queue.pop();
+			}
+			else
+				return false;
 		}
 		m_cvFull.notify_one();
 		return true;
@@ -113,7 +119,8 @@ bool CQueue<T>::Pop(T & data)
 template<class T>
 void CQueue<T>::Clear()
 {
-	CAutoLock autolock(m_mutexQueue);
+	m_mutexQueue.lock();
 	while (!m_queue.empty())
 		m_queue.pop();
+	m_mutexQueue.unlock();
 }

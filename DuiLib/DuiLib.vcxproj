@@ -20,13 +20,13 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -42,13 +42,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\$(Configuration)\Program</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\Intermediate\$(Configuration)\$(ProjectName)</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateManifest>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\$(Configuration)\Program</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\Intermediate\$(Configuration)\$(ProjectName)</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateManifest>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedManifest>
@@ -84,9 +80,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AssemblerOutput>All</AssemblerOutput>
-      <AssemblerListingLocation>..\..\symbols\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
-      <UseUnicodeForAssemblerListing>true</UseUnicodeForAssemblerListing>
+      <AssemblerOutput>NoListing</AssemblerOutput>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -97,11 +91,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <BaseAddress>0x11000000</BaseAddress>
       <TargetMachine>MachineX86</TargetMachine>
-      <GenerateMapFile>true</GenerateMapFile>
-      <MapExports>true</MapExports>
-      <ProgramDatabaseFile>..\..\symbols\$(Configuration)\$(ProjectName)\pdb\$(ProjectName).pdb</ProgramDatabaseFile>
-      <MapFileName>..\..\symbols\$(Configuration)\$(ProjectName)\$(ProjectName).map</MapFileName>
-      <ImportLibrary>..\..\$(ProjectName)\lib\$(TargetName).lib</ImportLibrary>
+      <GenerateMapFile>false</GenerateMapFile>
+      <MapExports>false</MapExports>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -131,7 +122,6 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AssemblerOutput>All</AssemblerOutput>
       <UseUnicodeForAssemblerListing>true</UseUnicodeForAssemblerListing>
-      <AssemblerListingLocation>..\..\symbols\$(ConfigurationName)\$(ProjectName)\</AssemblerListingLocation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -139,15 +129,10 @@
     </ResourceCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ProgramDatabaseFile>..\..\symbols\$(Configuration)\$(ProjectName)\pdb\$(ProjectName).pdb</ProgramDatabaseFile>
       <BaseAddress>0x11000000</BaseAddress>
       <TargetMachine>MachineX86</TargetMachine>
-      <GenerateMapFile>true</GenerateMapFile>
-      <MapFileName>..\..\symbols\$(Configuration)\$(ProjectName)\$(ProjectName).map</MapFileName>
-      <MapExports>true</MapExports>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <ImportLibrary>..\..\$(ProjectName)\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>

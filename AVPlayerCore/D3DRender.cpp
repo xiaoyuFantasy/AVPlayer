@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "D3DRender.h"
-#pragma comment(lib, "D3D9.lib")
+#include <d3d9.h>
+#include <Dxva2api.h>
+
+typedef IDirect3D9* WINAPI pDirect3DCreate9(UINT);
+typedef HRESULT WINAPI pCreateDeviceManager9(UINT *, IDirect3DDeviceManager9 **);
 
 //Flexible Vertex Format, FVF
 typedef struct
@@ -23,100 +27,66 @@ CD3DRender::~CD3DRender()
 
 bool CD3DRender::InitRender()
 {
-	CAutoLock lock(m_mutex);
-	m_pDirect3D9 = Direct3DCreate9(D3D_SDK_VERSION);
-	if (!m_pDirect3D9)
+	m_hD3d = LoadLibrary(L"d3d9.dll");
+	if (!m_hD3d) {
+		av_log(NULL, AV_LOG_ERROR, "failed to load D3D9 library\n");
 		return false;
+	}
 
-	D3DDISPLAYMODE d3dDisplayMode;
-	HRESULT hRet = m_pDirect3D9->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3dDisplayMode);
-	av_log(NULL, AV_LOG_INFO, "screen resolution w:%d, h:%d", d3dDisplayMode.Width, d3dDisplayMode.Height);
+	pDirect3DCreate9  *createD3D = (pDirect3DCreate9 *)GetProcAddress(m_hD3d, "Direct3DCreate9");
+	if (!createD3D) {
+		av_log(NULL, AV_LOG_ERROR, "failed to locate Direct3DCreate9\n");
+		return false;
+	}
+
+	m_pDirect3D9 = createD3D(D3D_SDK_VERSION);
+	if (!m_pDirect3D9) {
+		av_log(NULL, AV_LOG_ERROR, "failed to create IDirect3D object\n");
+		return false;
+	}
+
 	return true;
 }
 
 bool CD3DRender::CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelFormat)
 {
-	m_pDirect3D9 = Direct3DCreate9(D3D_SDK_VERSION);
-	if (m_pDirect3D9 == NULL)
-		return -1;
-
-	D3DPRESENT_PARAMETERS d3dpp;
-	ZeroMemory(&d3dpp, sizeof(d3dpp));
-	d3dpp.Windowed = TRUE;
-	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
-
-	GetClientRect(hWnd, &m_rtViewport);
-
-	HRESULT hRet = m_pDirect3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd,
-		D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-		&d3dpp, &m_pDirect3DDevice);
-	if (FAILED(hRet))
-		return false;
-
-	hRet = m_pDirect3DDevice->CreateOffscreenPlainSurface(
-		nWidth, nHeight,
-		(D3DFORMAT)MAKEFOURCC('Y', 'V', '1', '2'),
-		D3DPOOL_DEFAULT,
-		&m_pDirect3DSurfaceRender,
-		NULL);
-
-	if (FAILED(hRet))
-		return false;
-
-	m_hWnd = hWnd;
-	m_nVideoWidth = nWidth;
-	m_nVideoHeight = nHeight;
-
-	if (AV_PIX_FMT_YUV420P != pixelFormat )
+	D3DDISPLAYMODE d3ddm;
+	UINT adapter = D3DADAPTER_DEFAULT;
+	IDirect3D9_GetAdapterDisplayMode(m_pDirect3D9, adapter, &d3ddm);
+	
+	D3DCAPS9 caps;
+	DWORD BehaviorFlags = D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED;
+	HRESULT hr = m_pDirect3D9->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &caps);
+	if (SUCCEEDED(hr))
 	{
-		//创建转换函数
-		if (m_pFrameOut)
-			av_frame_free(&m_pFrameOut);
-		m_pFrameOut = av_frame_alloc();
-		m_pFrameOut->format = AV_PIX_FMT_YUV420P;
-		m_pFrameOut->width = nWidth;
-		m_pFrameOut->height = nHeight;
-		m_pSwsCtx = sws_getContext(
-			nWidth,
-			nHeight,
-			(AVPixelFormat)pixelFormat,
-			m_pFrameOut->width,
-			m_pFrameOut->height,
-			(AVPixelFormat)m_pFrameOut->format,
-			SWS_BILINEAR,
-			nullptr,
-			nullptr,
-			nullptr);
-
-		if (!m_pSwsCtx)
-		{
-			av_log(NULL, AV_LOG_ERROR, "sws_getContext failed.");
-			DestoryRender();
-			return false;
-		}
-
-		int nSize = av_image_get_buffer_size(
-			(AVPixelFormat)m_pFrameOut->format,
-			m_pFrameOut->width,
-			m_pFrameOut->height,
-			1);
-
-		if (m_pVideoBuffer)
-			av_free(m_pVideoBuffer);
-		m_pVideoBuffer = (uint8_t*)av_malloc(nSize * sizeof(uint8_t));
-
-		//设置帧数据对应的内存
-		av_image_fill_arrays(
-			m_pFrameOut->data,
-			m_pFrameOut->linesize,
-			m_pVideoBuffer,
-			(AVPixelFormat)m_pFrameOut->format,
-			m_pFrameOut->width,
-			m_pFrameOut->height,
-			1);
+		if (caps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT)
+			BehaviorFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED;// | D3DCREATE_FPU_PRESERVE;
+		else
+			BehaviorFlags = D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED;// | D3DCREATE_FPU_PRESERVE;
 	}
 
+	if (m_pDirect3DDevice)
+	{
+		m_pDirect3DDevice->Release();
+		m_pDirect3DDevice = nullptr;
+	}
+
+	m_d3dpp.Windowed = TRUE;
+	m_d3dpp.hDeviceWindow = hWnd;
+	m_d3dpp.BackBufferCount = 1;
+	m_d3dpp.BackBufferWidth = nWidth;
+	m_d3dpp.BackBufferHeight = nHeight;
+	m_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	m_d3dpp.BackBufferFormat = d3ddm.Format;
+	m_d3dpp.EnableAutoDepthStencil = FALSE;
+	m_d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
+	m_d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+	m_d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+	hr = IDirect3D9_CreateDevice(m_pDirect3D9, adapter, D3DDEVTYPE_HAL, hWnd, BehaviorFlags, &m_d3dpp, &m_pDirect3DDevice);
+	if (FAILED(hr)) {
+		av_log(NULL, AV_LOG_ERROR, "Failed to create Direct3D device\n");
+		return false;
+	}
 	return true;
 }
 
@@ -142,65 +112,31 @@ void CD3DRender::SetRenderSize(int width, int height)
 
 void CD3DRender::RenderFrameData(AVFrame *pFrame)
 {
-	if (!pFrame)
+	if (pFrame->format != AV_PIX_FMT_DXVA2_VLD)
 		return;
-	
-	if (m_pSwsCtx)
+
+	LPDIRECT3DSURFACE9 surface = (LPDIRECT3DSURFACE9)pFrame->data[3];
+	if (!surface)
 	{
-		sws_scale(
-			m_pSwsCtx,
-			(uint8_t const * const *)pFrame->data,
-			pFrame->linesize,
-			0,
-			pFrame->height,
-			m_pFrameOut->data,
-			m_pFrameOut->linesize);
+		av_log(NULL, AV_LOG_ERROR, "frame data[3] to LPDIRECT3DSURFACE9 failed!!!");
+		return;
 	}
 
-	D3DLOCKED_RECT d3d_rect;
-	HRESULT hRet = m_pDirect3DSurfaceRender->LockRect(&d3d_rect, NULL, D3DLOCK_DONOTWAIT);
-	if (FAILED(hRet))
-		return;
-
-	byte *pSrc = (byte*)pFrame->data[0];
-	byte * pDest = (byte*)d3d_rect.pBits;
-
-	int stride = d3d_rect.Pitch;
-	int pixel_w_size = m_nVideoWidth * 4;
-	/*for (int i = 0; i< m_nVideoHeight; i++) {
-		OutputDebugString(std::to_wstring(i).c_str());
-		OutputDebugString(L"\n");
-		memcpy(pDest, pSrc, pixel_w_size);
-		pDest += stride;
-		pSrc += pixel_w_size;
-	}*/
-
-	/*for (int i = 0; i < pixel_h; i++) {
-		memcpy(pDest + i * stride, pSrc + i * pixel_w, pixel_w);
+	CAutoLock lock(m_mutex);
+	if (m_pDirect3DSurfaceRender)
+	{
+		m_pDirect3DSurfaceRender->Release();
+		m_pDirect3DSurfaceRender = NULL;
 	}
-	for (int i = 0; i < pixel_h / 2; i++) {
-		memcpy(pDest + stride * pixel_h + i * stride / 2, pSrc + pixel_w * pixel_h + pixel_w * pixel_h / 4 + i * pixel_w / 2, pixel_w / 2);
-	}
-	for (int i = 0; i < pixel_h / 2; i++) {
-		memcpy(pDest + stride * pixel_h + stride * pixel_h / 4 + i * stride / 2, pSrc + pixel_w * pixel_h + i * pixel_w / 2, pixel_w / 2);*/
 
-
-	hRet = m_pDirect3DSurfaceRender->UnlockRect();
-	if (FAILED(hRet))
-		return;
-
-	if (m_pDirect3DDevice == NULL)
-		return;
-
+	m_pDirect3DDevice->Reset(&m_d3dpp);
 	m_pDirect3DDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 	m_pDirect3DDevice->BeginScene();
-	IDirect3DSurface9 * pBackBuffer = NULL;
-
-	m_pDirect3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-	m_pDirect3DDevice->StretchRect(m_pDirect3DSurfaceRender, NULL, pBackBuffer, &m_rtViewport, D3DTEXF_LINEAR);
+	m_pDirect3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &m_pDirect3DSurfaceRender);
+	m_pDirect3DDevice->StretchRect(surface, NULL, m_pDirect3DSurfaceRender, NULL, D3DTEXF_LINEAR);
 	m_pDirect3DDevice->EndScene();
 	m_pDirect3DDevice->Present(NULL, NULL, NULL, NULL);
-	pBackBuffer->Release();
+
 }
 
 void CD3DRender::SetScale(float factor)

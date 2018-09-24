@@ -59,10 +59,12 @@ int CFFmpegDecoder::DecodeFrame(FramePtr& pFrame, PacketQueue & queue)
 		}
 		else if (m_pCodecCtx->codec_type == AVMEDIA_TYPE_VIDEO)
 		{
-			if (m_pCodecCtx->hw_device_ctx)
-				m_funcRender(pFrame.get());
+			/*if (pFrame->format == AV_PIX_FMT_DXVA2_VLD && m_funcHwRender)
+				m_funcHwRender(pFrame.get());*/
 		}
 	}
+
+	return ret;
 
 	//int ret = AVERROR(EAGAIN);
 	//FramePtr pTempFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
@@ -133,7 +135,7 @@ int CFFmpegDecoder::DecodeFrame(FramePtr& pFrame, PacketQueue & queue)
 	return 0;
 }
 
-void CFFmpegDecoder::SetRenderCallback(std::function<void(AVFrame* pFrame)> funcRender)
+void CFFmpegDecoder::SetHwRenderCallback(std::function<void(AVFrame* pFrame)> funcHwRender)
 {
-	m_funcRender = funcRender;
+	m_funcHwRender = funcHwRender;
 }

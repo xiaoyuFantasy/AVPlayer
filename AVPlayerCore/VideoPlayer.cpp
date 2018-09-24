@@ -3,6 +3,17 @@
 #include "DecoderFactory.h"
 #include "RenderFactory.h"
 #include "GlRender.h"
+#include "D3DRender.h"
+
+typedef struct DXVA2DevicePriv {
+	HMODULE d3dlib;
+	HMODULE dxva2lib;
+
+	HANDLE device_handle;
+
+	IDirect3D9       *d3d9;
+	IDirect3DDevice9 *d3d9device;
+} DXVA2DevicePriv;
 
 CVideoPlayer::CVideoPlayer()
 	: m_queueFrame(5)
@@ -175,27 +186,27 @@ bool CVideoPlayer::CreateDecoder()
 
 	if (m_opts.bGpuDecode)
 	{
+		//ffmpeg硬解
 		if (m_pHWDeviceCtx)
 			av_buffer_unref(&m_pHWDeviceCtx);
 
-		AVHWDeviceType nHWTypes[3] = { AV_HWDEVICE_TYPE_DXVA2, AV_HWDEVICE_TYPE_CUDA,  AV_HWDEVICE_TYPE_D3D11VA };
-		for (size_t i = 0; i < 1/*sizeof(nHWTypes)*/; i++)
+		//AVHWDeviceType nHWTypes[3] = { AV_HWDEVICE_TYPE_DXVA2, AV_HWDEVICE_TYPE_CUDA,  AV_HWDEVICE_TYPE_D3D11VA };
+		//for (size_t i = 0; i < sizeof(nHWTypes); i++)
 		{
-			if ((ret = av_hwdevice_ctx_create(&m_pHWDeviceCtx, AV_HWDEVICE_TYPE_QSV, NULL, NULL, 0)) == 0)
+			if ((ret = av_hwdevice_ctx_create(&m_pHWDeviceCtx, AV_HWDEVICE_TYPE_DXVA2, NULL, NULL, 0)) == 0)
 			{
-				av_log(NULL, AV_LOG_INFO, "create hw device ctx index:%d.", i);
+				av_log(NULL, AV_LOG_INFO, "create dxva2 hw device ctx");
 				m_pCodecCtx->hw_device_ctx = av_buffer_ref(m_pHWDeviceCtx);
-				m_typeCodec = nHWTypes[i];
+				m_typeCodec = AV_HWDEVICE_TYPE_DXVA2;
 				m_opts.bGpuDecode = true;
-				m_pDecoder->SetRenderCallback(std::bind(&CVideoPlayer::RenderFrame, this, std::placeholders::_1));
-				break;
 			}
-			m_opts.bGpuDecode = false;
+			else
+			{
+				m_opts.bGpuDecode = false;
+				av_log(NULL, AV_LOG_WARNING, "Failed to create special HW device.");
+			}
 		}
-	}
-
-	if (m_typeCodec == AV_HWDEVICE_TYPE_NONE)
-		av_log(NULL, AV_LOG_WARNING, "Failed to create special HW device.");
+	}	
 
 	if ((ret = avcodec_open2(m_pCodecCtx, pCodec, NULL)) < 0)
 	{
@@ -216,9 +227,6 @@ void CVideoPlayer::DecodeThread()
 		if (!m_pCodecCtx)
 			return;
 
-		if (m_opts.bGpuDecode)
-			CreateRender();
-
 		while (!m_bStopDecode && !m_bQuit)
 		{
 			if (m_bPause)
@@ -230,27 +238,26 @@ void CVideoPlayer::DecodeThread()
 			FramePtr pFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
 			if (m_pDecoder && m_pDecoder->DecodeFrame(pFrame, m_queuePacket) >= 0)
 			{
-				//{
-				//	static double temp_pts = 0.0;
-				//	static double diff_count = 0.0;
-				//	static double diff_average = 0.0;
-				//	static int64_t frame_count = 0;
-				//	frame_count++;
-				//	double pts = (pFrame->best_effort_timestamp - m_pStream->start_time) * av_q2d(m_pStream->time_base);
-				//	double diff = pts - temp_pts;
-				//	if (diff_average != 0.0 && std::fabs(diff - diff_average* 1000) > 10.0f)
-				//		pFrame->pts = (double)diff_average * 1000 / av_q2d(m_pStream->time_base);
-				//	//av_log(NULL, AV_LOG_INFO, "frame pts: %d", pFrame->pts);
-				//	//av_log(NULL, AV_LOG_INFO, "diff: %f", diff);
-				//	temp_pts = pts;
-				//	diff_count += diff;
-				//	diff_average = diff_count / double(frame_count);
-				//	//av_log(NULL, AV_LOG_INFO, "pts:%d, diff:%f, frame pts:%d", pts, diff_average, pFrame->pts/1000);
-				//}
-				if (!m_opts.bGpuDecode)
-					m_queueFrame.Push(std::move(pFrame));
+				if (pFrame->format == AV_PIX_FMT_DXVA2_VLD && m_opts.video_type == NORMAL_TYPE)
+					HwRenderFrame(pFrame.get());
+				else
+				{
+					if (pFrame->hw_frames_ctx)
+					{
+						FramePtr pTempFrame{ av_frame_alloc(), [](AVFrame* p) {av_frame_free(&p); } };
+						int ret = 0;
+						if ((ret = av_hwframe_transfer_data(pTempFrame.get(), pFrame.get(), 0)) < 0)
+						{
+							av_log(NULL, AV_LOG_ERROR, "Error transferring the data to system memory. err:%d", ret);
+							continue;
+						}
+						av_frame_copy_props(pTempFrame.get(), pFrame.get());
+						m_queueFrame.Push(std::move(pTempFrame));
+					}
+					else
+						m_queueFrame.Push(std::move(pFrame));
+				}		
 			}
-
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
@@ -260,7 +267,7 @@ void CVideoPlayer::DecodeThread()
 
 void CVideoPlayer::RenderThread()
 {
-	if (!m_opts.bGpuDecode)
+	if (m_opts.video_type != NORMAL_TYPE || m_typeCodec != AV_HWDEVICE_TYPE_NONE)
 	{
 		m_threadRender = std::thread([&]() {
 			av_log(NULL, AV_LOG_INFO, "Video Render Thread");
@@ -292,7 +299,7 @@ bool CVideoPlayer::CreateRender()
 {
 	if (m_pRender)
 	{
-		bool bRet = m_pRender->CreateRender(m_opts.hWnd, m_nWndWidth, m_nWndHeight, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? m_pCodecCtx->pix_fmt : AV_PIX_FMT_NV12);
+		bool bRet = m_pRender->CreateRender(m_opts.hWnd, m_pCodecCtx->width, m_pCodecCtx->height, m_typeCodec == AV_HWDEVICE_TYPE_NONE ? m_pCodecCtx->pix_fmt : AV_PIX_FMT_NV12);
 		if (!bRet && m_opts.funcEvent)
 		{
 			PlayerErrorSt err;
@@ -336,9 +343,6 @@ void CVideoPlayer::RenderFrame(AVFrame *pFrame)
 	else
 	{
 		float delay = SmoothVideo(pFrame, m_queuePacket.Count());
-		/*DWORD dwNext = GetTickCount();
-		av_log(NULL, AV_LOG_INFO, "queue count:%d, delay:%d", m_queuePacket.Count(), dwNext - dwBefore);
-		dwBefore = dwNext;*/
 		::Sleep(delay);
 	}
 
@@ -350,6 +354,69 @@ void CVideoPlayer::RenderFrame(AVFrame *pFrame)
 
 	if (m_pRender)
 		m_pRender->RenderFrameData(pFrame);
+}
+
+void CVideoPlayer::HwRenderFrame(AVFrame * pFrame)
+{
+	double video_pts = 0; //当前视频的pts
+	if (pFrame->pts == AV_NOPTS_VALUE && pFrame->opaque && *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE)
+		video_pts = *(int64_t *)pFrame->opaque;
+	else if (pFrame->pts != AV_NOPTS_VALUE)
+		video_pts = pFrame->pts;
+	else
+		video_pts = 0;
+
+	video_pts *= av_q2d(m_pStream->time_base);
+	video_pts = SyncVideo(pFrame, video_pts);
+
+	if (m_pClockMgr->GetAudioClock() > 0)
+	{
+		double audio_pts;//音频pts
+		while (!m_bStopRender && !m_bPause && !m_bQuit)
+		{
+			audio_pts = m_pClockMgr->GetAudioClock();
+			//av_log(NULL, AV_LOG_INFO, "video pts:%f, audio pts:%f", video_pts, audio_pts);
+			if (video_pts <= audio_pts)
+				break;
+
+			int delayTime = (video_pts - audio_pts) * 1000;
+			delayTime = delayTime > 5 ? 5 : delayTime;
+			std::this_thread::sleep_for(std::chrono::milliseconds(delayTime));
+		}
+	}
+	else
+	{
+		float delay = SmoothVideo(pFrame, m_queuePacket.Count());
+		::Sleep(delay);
+	}
+
+	if (m_bPause)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		return;
+	}
+
+	LPDIRECT3DSURFACE9 surface = (LPDIRECT3DSURFACE9)pFrame->data[3];
+	if (!surface)
+	{
+		av_log(NULL, AV_LOG_ERROR, "frame data[3] to LPDIRECT3DSURFACE9 failed!!!");
+		return;
+	}
+
+	AVHWFramesContext *ctx = (AVHWFramesContext*)pFrame->hw_frames_ctx->data;
+	DXVA2DevicePriv *priv = (DXVA2DevicePriv*)ctx->device_ctx->user_opaque;
+	if (m_pDirect3DSurfaceRender)
+	{
+		m_pDirect3DSurfaceRender->Release();
+		m_pDirect3DSurfaceRender = NULL;
+	}
+
+	priv->d3d9device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+	priv->d3d9device->BeginScene();
+	priv->d3d9device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &m_pDirect3DSurfaceRender);
+	priv->d3d9device->StretchRect(surface, NULL, m_pDirect3DSurfaceRender, NULL, D3DTEXF_LINEAR);
+	priv->d3d9device->EndScene();
+	priv->d3d9device->Present(NULL, NULL, m_opts.hWnd, NULL);
 }
 
 double CVideoPlayer::SyncVideo(AVFrame * frame, double pts)
@@ -406,3 +473,4 @@ float CVideoPlayer::SmoothVideo(AVFrame * frame, int size)
 	float delay = duration / fShowSpeed;
 	return delay;
 }
+

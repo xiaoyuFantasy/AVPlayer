@@ -57,8 +57,7 @@ LONG ApplicationCrashHandler(EXCEPTION_POINTERS *pException)
 	PathAddBackslash(szPath);
 	PathAppend(szPath, L"minidump.dmp");
 	CreateDumpFile(szPath, pException);
-	FatalAppExit(-1, _T("*** Unhandled Exception! ***"));
-
+	//FatalAppExit(-1, _T("*** Unhandled Exception! ***"));
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
