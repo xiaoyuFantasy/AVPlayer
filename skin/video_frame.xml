@@ -2,6 +2,6 @@
 
 <Window drop="true">
     <VerticalLayout name="video_layout" bkcolor="0xFF364c78" menu="true" drop="true" >
-        <Label name="msg" textcolor="0xFFFFFFFF" multiline="true" />
+        <Label name="msg" textcolor="0xFFFFFFFF" multiline="true" height="50" />
     </VerticalLayout>
 </Window>

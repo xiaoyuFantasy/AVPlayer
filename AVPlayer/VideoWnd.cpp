@@ -172,8 +172,7 @@ void CVideoWnd::Play()
 	m_opts.hInstance = m_PaintManager.GetInstance();
 	m_opts.funcEvent = CVideoWnd::FuncPlayerEvent;
 	m_opts.video_type = (VIDEO_TYPE)m_nVideoType;
-	if (m_opts.video_type == VIDEO_TYPE::PANORAMIC_TYPE)
-		m_opts.bEnableAudio = false;
+	m_opts.bEnableAudio = false;
 
 	m_opts.strPath = CW2A(m_wstrPlayUrl.c_str(), CP_UTF8);
 	::PostMessage(m_hWnd, PLAYER_MSG_OPEN, NULL, NULL);
