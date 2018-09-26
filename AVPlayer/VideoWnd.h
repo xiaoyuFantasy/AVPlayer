@@ -90,6 +90,7 @@ public:
 	std::wstring m_wstrChannelName;
 	//ipc
 	std::shared_ptr<IPC::Endpoint> m_pEndpoint;
+	std::atomic_bool	m_bIPCConnected;
 	//control
 	CLabelUI*	m_pLabelMsg = nullptr;
 	CVerticalLayoutUI*	m_pVideoLayout = nullptr;
