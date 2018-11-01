@@ -290,26 +290,14 @@ LRESULT CVideoWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
 LRESULT CVideoWnd::OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHandled)
 {
-	ResizeVideo();
+	//ResizeVideo();
 	return __super::OnSize(uMsg, wParam, lParam, bHandled);
 }
 
 LRESULT CVideoWnd::OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHandled)
 {
-	ResizeVideo();
+	//ResizeVideo();
 	return __super::OnSizing(uMsg, wParam, lParam, bHandled);
-}
-
-LRESULT CVideoWnd::OnMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHandled)
-{
-	ResizeVideo();
-	return __super::OnMove(uMsg, wParam, lParam, bHandled);
-}
-
-LRESULT CVideoWnd::OnMoving(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHandled)
-{
-	ResizeVideo();
-	return __super::OnMoving(uMsg, wParam, lParam, bHandled);
 }
 
 void CVideoWnd::ResizeVideo()

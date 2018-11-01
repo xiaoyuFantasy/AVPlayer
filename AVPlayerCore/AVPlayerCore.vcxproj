@@ -156,6 +156,7 @@
     <ClInclude Include="ClockMgr.h" />
     <ClInclude Include="D3DRender.h" />
     <ClInclude Include="DecoderDefine.h" />
+    <ClInclude Include="Dxva2Decoder.h" />
     <ClInclude Include="FFmpegDecoder.h" />
     <ClInclude Include="DecoderFactory.h" />
     <ClInclude Include="GlRender.h" />
@@ -180,6 +181,7 @@
     <ClCompile Include="AVPlayer.cpp" />
     <ClCompile Include="ClockMgr.cpp" />
     <ClCompile Include="D3DRender.cpp" />
+    <ClCompile Include="Dxva2Decoder.cpp" />
     <ClCompile Include="FFmpegDecoder.cpp" />
     <ClCompile Include="DecoderFactory.cpp" />
     <ClCompile Include="dllmain.cpp">

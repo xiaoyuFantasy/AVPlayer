@@ -106,7 +106,7 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 					::PathStripPath(szUrl);
 					m_pLabelName->SetText(szUrl);
 					m_opts.video_type = (VIDEO_TYPE)type;// VIDEO_TYPE::NORMAL_TYPE;
-					m_opts.bEnableAudio = false;
+					//m_opts.bEnableAudio = false;
 					//m_opts.bGpuDecode = false;
 					m_opts.strPath = CW2A(wstrPath.c_str(), CP_UTF8);
 					m_pVideo->SetOptions(m_opts);

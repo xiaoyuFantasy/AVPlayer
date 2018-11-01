@@ -4,6 +4,9 @@
 #include "RenderFactory.h"
 #include "GlRender.h"
 #include "D3DRender.h"
+#include "libavutil\hwcontext.h"
+
+//extern const D3DPRESENT_PARAMETERS dxva2_present_params = { 1920, 1080, D3DFMT_UNKNOWN, 0, D3DMULTISAMPLE_NONE, NULL, D3DSWAPEFFECT_DISCARD, NULL, TRUE };
 
 typedef struct DXVA2DevicePriv {
 	HMODULE d3dlib;
@@ -190,9 +193,46 @@ bool CVideoPlayer::CreateDecoder()
 		if (m_pHWDeviceCtx)
 			av_buffer_unref(&m_pHWDeviceCtx);
 
+		switch (pCodec->id)
+		{
+		case AV_CODEC_ID_MPEG2VIDEO:
+		case AV_CODEC_ID_H264:
+		case AV_CODEC_ID_VC1:
+		case AV_CODEC_ID_WMV3:
+		case AV_CODEC_ID_HEVC:
+		case AV_CODEC_ID_VP9:
+		{
+			m_pCodecCtx->thread_count = 1;
+			InputStream *ist = new InputStream();
+			ist->hwaccel_id = HWACCEL_AUTO;
+			ist->hwaccel_device = "dxva2";
+			ist->dec = pCodec;
+			ist->dec_ctx = m_pCodecCtx;
+
+			m_pCodecCtx->opaque = ist;
+			if (dxva2_init(m_pCodecCtx, m_opts.hWnd) == 0)
+			{
+				m_pCodecCtx->get_buffer2 = ist->hwaccel_get_buffer;
+				m_pCodecCtx->get_format = GetHwFormat;
+				m_pCodecCtx->thread_safe_callbacks = 1;
+				
+				m_typeCodec = AV_HWDEVICE_TYPE_DXVA2;
+				m_opts.bGpuDecode = true;
+				av_log(NULL, AV_LOG_INFO, "GPU Decode");
+				break;
+			}
+		}
+		default:
+			m_opts.bGpuDecode = false;
+			av_log(NULL, AV_LOG_WARNING, "Failed to create special HW device.");
+			break;
+		}
+
+
 		//AVHWDeviceType nHWTypes[3] = { AV_HWDEVICE_TYPE_DXVA2, AV_HWDEVICE_TYPE_CUDA,  AV_HWDEVICE_TYPE_D3D11VA };
 		//for (size_t i = 0; i < sizeof(nHWTypes); i++)
-		{
+		/*{	
+
 			if ((ret = av_hwdevice_ctx_create(&m_pHWDeviceCtx, AV_HWDEVICE_TYPE_DXVA2, NULL, NULL, 0)) == 0)
 			{
 				av_log(NULL, AV_LOG_INFO, "create dxva2 hw device ctx");
@@ -205,7 +245,7 @@ bool CVideoPlayer::CreateDecoder()
 				m_opts.bGpuDecode = false;
 				av_log(NULL, AV_LOG_WARNING, "Failed to create special HW device.");
 			}
-		}
+		}*/
 	}	
 
 	if ((ret = avcodec_open2(m_pCodecCtx, pCodec, NULL)) < 0)
@@ -396,27 +436,44 @@ void CVideoPlayer::HwRenderFrame(AVFrame * pFrame)
 		return;
 	}
 
-	LPDIRECT3DSURFACE9 surface = (LPDIRECT3DSURFACE9)pFrame->data[3];
+
+	dxva2_retrieve_data_call(m_pCodecCtx, pFrame);
+	/*LPDIRECT3DSURFACE9 surface = (LPDIRECT3DSURFACE9)pFrame->data[3];
 	if (!surface)
 	{
 		av_log(NULL, AV_LOG_ERROR, "frame data[3] to LPDIRECT3DSURFACE9 failed!!!");
 		return;
-	}
+	}*/
 
-	AVHWFramesContext *ctx = (AVHWFramesContext*)pFrame->hw_frames_ctx->data;
-	DXVA2DevicePriv *priv = (DXVA2DevicePriv*)ctx->device_ctx->user_opaque;
-	if (m_pDirect3DSurfaceRender)
-	{
-		m_pDirect3DSurfaceRender->Release();
-		m_pDirect3DSurfaceRender = NULL;
-	}
-
-	priv->d3d9device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
-	priv->d3d9device->BeginScene();
-	priv->d3d9device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &m_pDirect3DSurfaceRender);
-	priv->d3d9device->StretchRect(surface, NULL, m_pDirect3DSurfaceRender, NULL, D3DTEXF_LINEAR);
-	priv->d3d9device->EndScene();
-	priv->d3d9device->Present(NULL, NULL, m_opts.hWnd, NULL);
+	//AVHWFramesContext *ctx = (AVHWFramesContext*)pFrame->hw_frames_ctx->data;
+	//DXVA2DevicePriv *priv = (DXVA2DevicePriv*)ctx->device_ctx->user_opaque;
+	//if (m_pDirect3DSurfaceRender)
+	//{
+	//	m_pDirect3DSurfaceRender->Release();
+	//	m_pDirect3DSurfaceRender = NULL;
+	//}
+	////D3DRS_MUTISAMPLEANTIALIAS
+	//DWORD dwValue = 0;
+	//HRESULT hr = priv->d3d9device->GetRenderState(D3DRS_MULTISAMPLEANTIALIAS, &dwValue);
+	//if (!m_bSetMulitSamples)
+	//{
+	//	D3DPRESENT_PARAMETERS d3dpp;
+	//	ZeroMemory(&d3dpp, sizeof(d3dpp));
+	//	d3dpp.BackBufferCount = 0;
+	//	d3dpp.BackBufferHeight = 0;
+	//	d3dpp.BackBufferWidth = 0;
+	//	hr = priv->d3d9device->Reset(&d3dpp);
+	//	if (hr != D3D_OK)
+	//		av_log(NULL, AV_LOG_ERROR, "device reset: %d", GetLastError());
+	//	hr = priv->d3d9device->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, TRUE);
+	//	m_bSetMulitSamples = true;
+	//}
+	//priv->d3d9device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
+	//priv->d3d9device->BeginScene();
+	//priv->d3d9device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &m_pDirect3DSurfaceRender);
+	//priv->d3d9device->StretchRect(surface, NULL, m_pDirect3DSurfaceRender, NULL, D3DTEXF_LINEAR);
+	//priv->d3d9device->EndScene();
+	//priv->d3d9device->Present(NULL, NULL, m_opts.hWnd, NULL);
 }
 
 double CVideoPlayer::SyncVideo(AVFrame * frame, double pts)
@@ -472,5 +529,13 @@ float CVideoPlayer::SmoothVideo(AVFrame * frame, int size)
 
 	float delay = duration / fShowSpeed;
 	return delay;
+}
+
+AVPixelFormat CVideoPlayer::GetHwFormat(AVCodecContext * s, const AVPixelFormat * pix_fmts)
+{
+	InputStream* ist = (InputStream*)s->opaque;
+	ist->hwaccel_id = HWACCEL_DXVA2;
+	ist->hwaccel_pix_fmt = AV_PIX_FMT_DXVA2_VLD;
+	return ist->hwaccel_pix_fmt;
 }
 

@@ -67,9 +67,9 @@ unsigned __stdcall video_frame_rgb(void *opaque)
 unsigned __stdcall RenderFunc(LPVOID lp)
 {
 	LPUnit* lpu = (LPUnit*)lp;
-	HWND hWnd = ::CreateWindow(L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 400 * (lpu->index % 4), 300 * (lpu->index / 4), 400, 300, nullptr, nullptr, nullptr, nullptr);
+	HWND hWnd = ::CreateWindow(L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 0, 0, 1920, 1080, nullptr, nullptr, nullptr, nullptr);
 	ShowWindow(hWnd, SW_SHOW);
-
+	SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 	_beginthreadex(NULL, 0, video_frame_yuv, hWnd, 0, nullptr);
 
 	MSG msg;
@@ -86,7 +86,7 @@ unsigned __stdcall RenderFunc(LPVOID lp)
 
 int main(int argc, char **argv)
 {
-	for (size_t i = 0; i < 10; i++)
+	for (size_t i = 0; i < 1; i++)
 	{
 		LPUnit* lpu = new LPUnit;
 		lpu->index = i;

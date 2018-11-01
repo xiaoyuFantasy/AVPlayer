@@ -30,7 +30,6 @@ int JYD3DRender::Init(HWND hwnd, unsigned int nWidth, unsigned int nHeight, bool
 	d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
 
 	GetClientRect(hwnd, &m_rtViewport);
-
 	lRet = m_pDirect3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &m_pDirect3DDevice);
 	if (FAILED(lRet))
 		return -1;

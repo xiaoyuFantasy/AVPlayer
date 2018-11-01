@@ -105,6 +105,9 @@
     <ClInclude Include="D3DRender.h">
       <Filter>render</Filter>
     </ClInclude>
+    <ClInclude Include="Dxva2Decoder.h">
+      <Filter>decoder</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -151,6 +154,9 @@
     </ClCompile>
     <ClCompile Include="D3DRender.cpp">
       <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="Dxva2Decoder.cpp">
+      <Filter>decoder</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

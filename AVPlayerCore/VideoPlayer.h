@@ -4,7 +4,9 @@
 #include "DecoderDefine.h"
 #include "AVPlayerDefine.h"
 #include "ClockMgr.h"
+#include "Dxva2Decoder.h"
 #include <d3d9.h>
+#pragma comment(lib, "D3D9.lib")
 
 #define MAX_VIDEO_SIZE (256) //25 * 256 * 1024
 
@@ -41,6 +43,8 @@ protected:
 	double SyncVideo(AVFrame *frame, double pts);
 	float SmoothVideo(AVFrame* frame, int size);
 
+	static AVPixelFormat GetHwFormat(AVCodecContext *s, const AVPixelFormat *pix_fmts);
+
 private:
 	PLAYER_OPTS			m_opts;
 	AVStream*			m_pStream = nullptr;
@@ -67,10 +71,13 @@ private:
 
 	AVPixelFormat		m_hwPixelFormat;
 	double				m_clock = 0.0;
-
+	bool				m_bSetMulitSamples = false;
 	std::thread			m_threadDecode;
 	std::thread			m_threadRender;
 	std::shared_ptr<IRender> m_pRender = nullptr;
 	std::shared_ptr<IDecoder> m_pDecoder = nullptr;
 	CClockMgr*			m_pClockMgr = nullptr;
+	//hw render
+	IDirect3D9              *m_pDirect3D9 = nullptr;
+	IDirect3DDevice9        *m_pDirect3DDevice = nullptr;
 };
