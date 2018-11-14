@@ -122,7 +122,6 @@ static void dxva2_destroy_decoder(AVCodecContext *s)
 	ctx->surface_age = 0;
 
 	if (ctx->decoder) {
-		//IDirectXVideoDecoder_Release(ctx->decoder);
 		ctx->decoder->Release();
 		ctx->decoder = NULL;
 	}
@@ -141,15 +140,12 @@ void dxva2_uninit(AVCodecContext *s)
 		dxva2_destroy_decoder(s);
 
 	if (ctx->decoder_service)
-		//IDirectXVideoDecoderService_Release(ctx->decoder_service);
 		ctx->decoder_service->Release();
 
 	if (ctx->d3d9devmgr && ctx->deviceHandle != INVALID_HANDLE_VALUE)
-		//IDirect3DDeviceManager9_CloseDeviceHandle(ctx->d3d9devmgr, ctx->deviceHandle);
 		ctx->d3d9devmgr->CloseDeviceHandle(ctx->deviceHandle);
 
 	if (ctx->d3d9devmgr)
-		//IDirect3DDeviceManager9_Release(ctx->d3d9devmgr);
 		ctx->d3d9devmgr->Release();
 
 	if (ctx->d3d9device)
@@ -164,7 +160,6 @@ void dxva2_uninit(AVCodecContext *s)
 	if (ctx->dxva2lib)
 		FreeLibrary(ctx->dxva2lib);
 
-	//av_frame_free(&ctx->tmp_frame);
 	if (ctx->m_pBackBuffer)
 	{
 		ctx->m_pBackBuffer->Release();
@@ -194,7 +189,6 @@ static void dxva2_release_buffer(void *opaque, uint8_t *data)
 		}
 	}
 	IDirect3DSurface9_Release(w->surface);
-	//IDirectXVideoDecoder_Release(w->decoder);
 	w->decoder->Release();
 
 	av_free(w);
@@ -265,57 +259,12 @@ static int dxva2_retrieve_data(AVCodecContext *s, AVFrame *frame)
 		ctx->m_pBackBuffer = NULL;
 	}
 
-	{
-		ctx->d3d9device->Reset(&ctx->m_d3dpp);
-	}
-
-
 	ctx->d3d9device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 	ctx->d3d9device->BeginScene();
 	ctx->d3d9device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &ctx->m_pBackBuffer);
 	ctx->d3d9device->StretchRect(surface, NULL, ctx->m_pBackBuffer, NULL, D3DTEXF_LINEAR);
 	ctx->d3d9device->EndScene();
 	ctx->d3d9device->Present(NULL, NULL, NULL, NULL);
-
-	/*if ((UINT)m_rtViewport.right != d3dpp.BackBufferWidth ||
-	(UINT)m_rtViewport.bottom != d3dpp.BackBufferHeight)
-	{
-	d3dpp.BackBufferWidth = m_rtViewport.right;
-	d3dpp.BackBufferHeight = m_rtViewport.bottom;
-	d3dpp.BackBufferFormat = D3DFMT_A8R8G8B8;
-	d3dpp.BackBufferCount = 1;
-	d3dpp.MultiSampleQuality = 0;
-	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
-	d3dpp.Flags |= D3DPRESENTFLAG_VIDEO;
-	d3dpp.Windowed = TRUE;
-	d3dpp.EnableAutoDepthStencil = TRUE;
-	d3dpp.AutoDepthStencilFormat = D3DFMT_D24S8;
-	d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-	d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-
-	HRESULT hr = ctx->d3d9device->Reset(&d3dpp);
-	if (FAILED(hr))
-	{
-	int code = HRESULT_CODE(hr);
-	if (hr == D3DERR_DEVICELOST)
-	{
-	av_log(NULL, loglevel, "Failed to Reset D3DERR_DEVICELOST\n");
-	}
-	else if (hr == D3DERR_DEVICEREMOVED)
-	{
-	av_log(NULL, loglevel, "Failed to Reset D3DERR_DEVICEREMOVED\n");
-	}
-	else if (hr == D3DERR_DRIVERINTERNALERROR)
-	{
-	av_log(NULL, loglevel, "Failed to Reset D3DERR_DRIVERINTERNALERROR\n");
-	}
-	else
-	{
-	av_log(NULL, loglevel, "Failed to Reset \n");
-	}
-	}
-	}*/
 
 	LeaveCriticalSection(&ctx->cs);
 
@@ -383,10 +332,8 @@ static int dxva2_alloc(AVCodecContext *s, HWND hwnd)
 	d3dpp.Windowed = TRUE;
 	d3dpp.hDeviceWindow = hwnd;
 	d3dpp.BackBufferCount = 1;
-	/*d3dpp.BackBufferWidth = 0;
-	d3dpp.BackBufferHeight = 0;*/
-	d3dpp.BackBufferWidth = s->width;// GetSystemMetrics(SM_CXSCREEN);
-	d3dpp.BackBufferHeight = s->height;// GetSystemMetrics(SM_CYSCREEN);
+	d3dpp.BackBufferWidth = s->width;
+	d3dpp.BackBufferHeight = s->height;
 	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	d3dpp.BackBufferFormat = d3ddm.Format;
 	d3dpp.EnableAutoDepthStencil = FALSE;
@@ -394,20 +341,6 @@ static int dxva2_alloc(AVCodecContext *s, HWND hwnd)
 	d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 	d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 	ctx->m_d3dpp = d3dpp;
-	/*d3dpp.BackBufferWidth = 0;
-	d3dpp.BackBufferHeight = 0;
-	d3dpp.BackBufferFormat = D3DFMT_A8R8G8B8;
-	d3dpp.BackBufferCount = 1;
-	d3dpp.MultiSampleQuality = 0;
-	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3dpp.hDeviceWindow = hwnd;
-	d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
-	d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
-	d3dpp.Windowed = TRUE;
-	d3dpp.EnableAutoDepthStencil = TRUE;
-	d3dpp.AutoDepthStencilFormat = D3DFMT_D24S8;
-	d3dpp.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-	d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;*/
 
 	D3DCAPS9 caps;
 	DWORD BehaviorFlags = D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED;
@@ -442,21 +375,18 @@ static int dxva2_alloc(AVCodecContext *s, HWND hwnd)
 		goto fail;
 	}
 	ctx->token = resetToken;
-	//hr = IDirect3DDeviceManager9_ResetDevice(ctx->d3d9devmgr, ctx->d3d9device, resetToken);
 	hr = ctx->d3d9devmgr->ResetDevice(ctx->d3d9device, resetToken);
 	if (FAILED(hr)) {
 		av_log(NULL, loglevel, "Failed to bind Direct3D device to device manager\n");
 		goto fail;
 	}
 
-	//hr = IDirect3DDeviceManager9_OpenDeviceHandle(ctx->d3d9devmgr, &ctx->deviceHandle);
 	hr = ctx->d3d9devmgr->OpenDeviceHandle(&ctx->deviceHandle);
 	if (FAILED(hr)) {
 		av_log(NULL, loglevel, "Failed to open device handle\n");
 		goto fail;
 	}
 
-	//hr = IDirect3DDeviceManager9_GetVideoService(ctx->d3d9devmgr, ctx->deviceHandle, &IID_IDirectXVideoDecoderService, (void **)&ctx->decoder_service);
 	hr = ctx->d3d9devmgr->GetVideoService(ctx->deviceHandle, IID_IDirectXVideoDecoderService, (void **)&ctx->decoder_service);
 	if (FAILED(hr)) {
 		av_log(NULL, loglevel, "Failed to create IDirectXVideoDecoderService\n");
@@ -486,7 +416,6 @@ static int dxva2_get_decoder_configuration(AVCodecContext *s, const GUID *device
 	HRESULT hr;
 	int i;
 
-	//hr = IDirectXVideoDecoderService_GetDecoderConfigurations(ctx->decoder_service, device_guid, desc, NULL, &cfg_count, &cfg_list);
 	hr = ctx->decoder_service->GetDecoderConfigurations(*device_guid, desc, NULL, &cfg_count, &cfg_list);
 	if (FAILED(hr)) {
 		av_log(NULL, loglevel, "Unable to retrieve decoder configurations\n");
@@ -546,7 +475,6 @@ static int dxva2_create_decoder(AVCodecContext *s)
 	int surface_alignment;
 	int ret;
 
-	//hr = IDirectXVideoDecoderService_GetDecoderDeviceGuids(ctx->decoder_service, &guid_count, &guid_list);
 	hr = ctx->decoder_service->GetDecoderDeviceGuids(&guid_count, &guid_list);
 	if (FAILED(hr)) {
 		if (hr == D3DERR_INVALIDCALL)
@@ -571,7 +499,6 @@ static int dxva2_create_decoder(AVCodecContext *s)
 		if (j == guid_count)
 			continue;
 
-		//hr = IDirectXVideoDecoderService_GetDecoderRenderTargets(ctx->decoder_service, mode->guid, &target_count, &target_list);
 		hr = ctx->decoder_service->GetDecoderRenderTargets(*mode->guid, &target_count, &target_list);
 		if (FAILED(hr)) {
 			continue;
@@ -652,13 +579,6 @@ static int dxva2_create_decoder(AVCodecContext *s)
 		goto fail;
 	}
 
-	/*hr = IDirectXVideoDecoderService_CreateSurface(ctx->decoder_service,
-	FFALIGN(s->coded_width, surface_alignment),
-	FFALIGN(s->coded_height, surface_alignment),
-	ctx->num_surfaces - 1,
-	target_format, D3DPOOL_DEFAULT, 0,
-	DXVA2_VideoDecoderRenderTarget,
-	ctx->surfaces, NULL);*/
 	hr = ctx->decoder_service->CreateSurface(FFALIGN(s->width, surface_alignment),
 		FFALIGN(s->height, surface_alignment),
 		ctx->num_surfaces - 1,
@@ -671,9 +591,6 @@ static int dxva2_create_decoder(AVCodecContext *s)
 		goto fail;
 	}
 
-	/*hr = IDirectXVideoDecoderService_CreateVideoDecoder(ctx->decoder_service, &device_guid,
-	&desc, &config, ctx->surfaces,
-	ctx->num_surfaces, &ctx->decoder);*/
 	hr = ctx->decoder_service->CreateVideoDecoder(device_guid,
 		&desc, &config, ctx->surfaces,
 		ctx->num_surfaces, &ctx->decoder);

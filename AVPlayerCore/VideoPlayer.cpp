@@ -187,7 +187,7 @@ bool CVideoPlayer::CreateDecoder()
 		return false;
 	}
 
-	if (m_opts.bGpuDecode)
+	if (m_opts.bGpuDecode && m_opts.video_type == VIDEO_TYPE::NORMAL_TYPE)
 	{
 		//ffmpeg”≤Ω‚
 		if (m_pHWDeviceCtx)
@@ -228,7 +228,6 @@ bool CVideoPlayer::CreateDecoder()
 			break;
 		}
 
-
 		//AVHWDeviceType nHWTypes[3] = { AV_HWDEVICE_TYPE_DXVA2, AV_HWDEVICE_TYPE_CUDA,  AV_HWDEVICE_TYPE_D3D11VA };
 		//for (size_t i = 0; i < sizeof(nHWTypes); i++)
 		/*{	
@@ -247,6 +246,10 @@ bool CVideoPlayer::CreateDecoder()
 			}
 		}*/
 	}	
+	else
+	{
+		m_opts.bGpuDecode = false;
+	}
 
 	if ((ret = avcodec_open2(m_pCodecCtx, pCodec, NULL)) < 0)
 	{
