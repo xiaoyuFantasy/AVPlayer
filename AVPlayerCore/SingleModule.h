@@ -23,8 +23,5 @@ private:
 	CSingleModule<T>& operator=(const CSingleModule<T>&) = delete;
 
 private:
-	//static T& m_single;
-};
 
-//template<class T>
-//T& CSingleModule<T>::m_single;
+};

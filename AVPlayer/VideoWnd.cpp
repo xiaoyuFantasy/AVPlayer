@@ -122,7 +122,8 @@ void CVideoWnd::InitWindow()
 		m_pLabelMsg->SetText(L"Load AVPlayerCore.dll Failed!!!");
 	}
 
-	::WTSRegisterSessionNotification(m_hWnd, NOTIFY_FOR_ALL_SESSIONS);
+	//×¢²áËøÆÁÏûÏ¢
+	//::WTSRegisterSessionNotification(m_hWnd, NOTIFY_FOR_ALL_SESSIONS);
 }
 
 void CVideoWnd::Notify(TNotifyUI & msg)
@@ -252,7 +253,7 @@ LRESULT CVideoWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		Send("video_mouseleave");
 	else if (WM_WTSSESSION_CHANGE == uMsg)
 	{
-		if (WTS_SESSION_LOCK == wParam)
+		/*if (WTS_SESSION_LOCK == wParam)
 		{
 			if (m_funcStatus(m_hPlayer) != NoneStatus)
 			{
@@ -263,7 +264,7 @@ LRESULT CVideoWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				m_bLockScreenPlayedPre = false;
 		}
 		if (WTS_SESSION_UNLOCK == wParam && m_bLockScreenPlayedPre)
-			::PostMessage(m_hWnd, PLAYER_MSG_OPEN, NULL, NULL);
+			::PostMessage(m_hWnd, PLAYER_MSG_OPEN, NULL, NULL);*/
 	}
 		
 	return __super::HandleMessage(uMsg, wParam, lParam);
@@ -290,13 +291,11 @@ LRESULT CVideoWnd::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
 LRESULT CVideoWnd::OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHandled)
 {
-	//ResizeVideo();
 	return __super::OnSize(uMsg, wParam, lParam, bHandled);
 }
 
 LRESULT CVideoWnd::OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHandled)
 {
-	//ResizeVideo();
 	return __super::OnSizing(uMsg, wParam, lParam, bHandled);
 }
 
@@ -347,6 +346,8 @@ void CVideoWnd::InitIPC()
 {
 	if (m_bChildWnd)
 	{
+		if (m_pEndpoint)
+			m_pEndpoint.reset();
 		std::string strChannelName = CW2A(m_wstrChannelName.c_str(), CP_UTF8);
 		m_pEndpoint = std::make_shared<IPC::Endpoint>(strChannelName.c_str(), this);
 		::SetTimer(m_hWnd, IPC_TIMEOUT, 5000, nullptr);
@@ -363,7 +364,7 @@ bool CVideoWnd::OnMessageReceived(IPC::Message * msg)
 	else if (strCmd.compare("video_play") == 0)
 		Play();
 	else if (strCmd.compare("video_stop") == 0)
-		::ShowWindow(m_hWnd, SW_HIDE);//Stop();
+		Stop();
 
 	return true;
 }
