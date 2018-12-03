@@ -12,7 +12,7 @@ public:
 	bool InitRender() override;
 	bool CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelFormat = AV_PIX_FMT_YUV420P) override;
 	void DestoryRender() override;
-	bool SetRenderMode(RENDER_MODE) override;
+	bool SetRenderMode(AV_RENDER_MODE) override;
 	void SetRenderSize(int width, int height) override;
 	void RenderFrameData(AVFrame *pFrame) override;
 	void SetScale(float factor) override;

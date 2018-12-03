@@ -109,7 +109,7 @@ void CGlRender::DestoryRender()
 		ReleaseDC(m_hWnd, m_hDC);
 }
 
-bool CGlRender::SetRenderMode(RENDER_MODE mode)
+bool CGlRender::SetRenderMode(AV_RENDER_MODE mode)
 {
 	if (mode == m_renderMode)
 		return true;
@@ -210,7 +210,7 @@ void CGlRender::RenderFrameData(AVFrame *pFrame)
 
 	m_pShader->use();
 
-	if (m_renderMode == RENDER_MODE::PANO2D)
+	if (m_renderMode == AV_RENDER_MODE::PANO2D)
 	{
 		glm::mat4 projection(0.1f), view(0.1f), model(0.1f);
 		m_pShader->setMat4("projection", projection);
@@ -415,12 +415,12 @@ bool CGlRender::InitGL()
 	return true;
 }
 
-void CGlRender::SetVerticesModel(RENDER_MODE mode)
+void CGlRender::SetVerticesModel(AV_RENDER_MODE mode)
 {
 	m_vectVertices.clear();
 	m_vectIndices.clear();
 	m_vectTexcoords.clear();
-	if (m_renderMode == RENDER_MODE::PANO2D)
+	if (m_renderMode == AV_RENDER_MODE::PANO2D)
 		generatePlaneGeometry(m_vectVertices, m_vectIndices, m_vectTexcoords);
 	else
 		generateSphereGeometry(2.0f, m_vectVertices, m_vectIndices, m_vectTexcoords);

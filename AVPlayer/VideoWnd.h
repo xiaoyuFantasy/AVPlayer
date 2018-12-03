@@ -82,9 +82,7 @@ public:
 
 	//cmd args
 	bool	m_bChildWnd = false;
-	int		m_nVideoType = 1;
 	int		m_nIndex = 0;
-	std::wstring m_wstrPlayUrl;
 	std::wstring m_wstrChannelName;
 	//ipc
 	std::shared_ptr<IPC::Endpoint> m_pEndpoint;

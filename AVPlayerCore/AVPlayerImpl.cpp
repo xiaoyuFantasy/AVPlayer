@@ -92,9 +92,9 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 				m_pRender = CRenderFactory::getSingleModule().CreateRender("opengl");
 			m_pRender->InitRender();
 			if (1 == m_opts.video_type)
-				m_pRender->SetRenderMode(RENDER_MODE::PANO2D);
+				m_pRender->SetRenderMode(AV_RENDER_MODE::PANO2D);
 			else
-				m_pRender->SetRenderMode(RENDER_MODE::STANDARD);
+				m_pRender->SetRenderMode(AV_RENDER_MODE::STANDARD);
 			m_videoPlayer.SetRender(m_pRender);
 			m_videoPlayer.SetStream(m_pFormatCtx->streams[m_nVideoIndex]);
 			m_videoPlayer.SetClockMgr(&m_clockMgr);
@@ -237,7 +237,7 @@ void CAVPlayerImpl::Stop()
 	Close();
 }
 
-void CAVPlayerImpl::SetRenderMode(RENDER_MODE mode)
+void CAVPlayerImpl::SetRenderMode(AV_RENDER_MODE mode)
 {
 	if (m_bVideoOpen && m_pRender)
 		m_pRender->SetRenderMode(mode);

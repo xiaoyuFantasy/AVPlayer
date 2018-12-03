@@ -18,7 +18,7 @@ using namespace std;
 
 #define MAX_LOADSTRING 100
 
-enum VIDEO_TYPE
+enum AV_VIDEO_TYPE
 {
 	NORMAL_TYPE,
 	PANORAMIC_TYPE,
@@ -31,7 +31,7 @@ typedef struct _PLAYER_OPTS
 	HWND		hWnd = nullptr;
 	bool		bEnableVideo = true;
 	bool		bEnableAudio = true;
-	VIDEO_TYPE	video_type = NORMAL_TYPE;
+	AV_VIDEO_TYPE	video_type = NORMAL_TYPE;
 	HINSTANCE	hInstance;
 } PLAYER_OPTS;
 

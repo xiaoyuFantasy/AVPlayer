@@ -90,23 +90,31 @@ enum PLAY_STATUS
 	//CloseStatus,
 };
 
-enum VIDEO_TYPE
+enum AV_VIDEO_TYPE
 {
 	NORMAL_TYPE = 1 ,
 	PANORAMIC_TYPE = 2,
 };
 
-enum DECODE_TYPE
-{
-	CPU_DECODE,
-	GPU_DECODE,
-};
-
-enum RENDER_MODE {
+enum AV_RENDER_MODE {
 	PANO2D = 0,		// 普通2D播放模式
 	STANDARD = 1,	// 球形全景播放模式
 	FISH_EYE = 2,	// 鱼眼播放模式
 	STEREO = 3,		// 小行星播放模式
+};
+
+enum AV_DECODE_TYPE {
+	DECODE_TYPE_NONE,
+	DECODE_TYPE_VDPAU,
+	DECODE_TYPE_CUDA,
+	DECODE_TYPE_VAAPI,
+	DECODE_TYPE_DXVA2,
+	DECODE_TYPE_QSV,
+	DECODE_TYPE_VIDEOTOOLBOX,
+	DECODE_TYPE_D3D11VA,
+	DECODE_TYPE_DRM,
+	DECODE_TYPE_OPENCL,
+	DECODE_TYPE_MEDIACODEC,
 };
 
 typedef void(*FuncPlayerEvent)(void *user_data, const PLAYER_EVENT e, void *pData);
@@ -118,8 +126,8 @@ typedef struct _PLAYER_OPTS
 	HWND		hWnd = nullptr;
 	bool		bEnableVideo = true;
 	bool		bEnableAudio = true;
-	VIDEO_TYPE	video_type = NORMAL_TYPE;
-	bool		bGpuDecode = true;
+	AV_VIDEO_TYPE	video_type = NORMAL_TYPE;
+	AV_DECODE_TYPE decode_type = DECODE_TYPE_NONE;
 	HINSTANCE	hInstance = nullptr;
 	FuncPlayerEvent	funcEvent = nullptr;
 } PLAYER_OPTS;

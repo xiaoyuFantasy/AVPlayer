@@ -22,7 +22,7 @@ typedef void(*funcResume)(HANDLE handle);
 // 停止播放.
 typedef void(*funcStop)(HANDLE handle);
 // 设置模型
-typedef void(*funcSetRenderMode)(HANDLE handle, RENDER_MODE mode);
+typedef void(*funcSetRenderMode)(HANDLE handle, AV_RENDER_MODE mode);
 // 播放状态
 typedef PLAY_STATUS (*funcStatus)(HANDLE handle);
 // 等待播放直到完成.

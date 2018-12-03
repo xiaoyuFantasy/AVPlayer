@@ -25,7 +25,7 @@ public:
 	// Í£Ö¹²¥·Å.
 	void Stop();
 
-	void SetRenderMode(RENDER_MODE mode);
+	void SetRenderMode(AV_RENDER_MODE mode);
 
 	// ²¥·Å×´Ì¬.
 	PLAY_STATUS Status();

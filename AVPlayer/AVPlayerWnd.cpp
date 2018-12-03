@@ -77,7 +77,7 @@ void CAVPlayerWnd::InitWindow()
 	m_pBtnVolumeZero = (CButtonUI*)m_PaintManager.FindControl(L"btnVolumeZero");
 	m_pSliderVolume = (CSliderUI*)m_PaintManager.FindControl(L"sliderVol");
 
-	if (IsWindow(m_pVideo->GetHWND()))
+	if (::IsWindow(m_pVideo->GetHWND()))
 	{
 		m_opts.hWnd = m_pVideo->GetHWND();
 		m_opts.user_data = this;
@@ -100,14 +100,13 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 			{
 				m_pSettingDlg.reset();
 				m_pSettingDlg = std::make_shared<CSettingDialog>();
-				m_pSettingDlg->SetCallback([&](std::wstring wstrPath, int type) {
+				m_pSettingDlg->SetCallback([&](std::wstring wstrPath, int video_type, int decode_type) {
 					wchar_t szUrl[MAX_PATH + 1] = { 0 };
 					_tcscpy_s(szUrl, MAX_PATH, wstrPath.c_str());
 					::PathStripPath(szUrl);
 					m_pLabelName->SetText(szUrl);
-					m_opts.video_type = (VIDEO_TYPE)type;// VIDEO_TYPE::NORMAL_TYPE;
-					//m_opts.bEnableAudio = false;
-					//m_opts.bGpuDecode = false;
+					m_opts.video_type = (AV_VIDEO_TYPE)video_type;// VIDEO_TYPE::NORMAL_TYPE;
+					m_opts.decode_type = (AV_DECODE_TYPE)decode_type;
 					m_opts.strPath = CW2A(wstrPath.c_str(), CP_UTF8);
 					m_pVideo->SetOptions(m_opts);
 					m_pVideo->m_funcOpen(m_pVideo->m_hPlayer, m_opts, true);
@@ -123,7 +122,7 @@ void CAVPlayerWnd::Notify(TNotifyUI & msg)
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnRenderMode")) == 0)
 		{
-			m_pVideo->m_funcSetRenderMode(m_pVideo->m_hPlayer, RENDER_MODE::STANDARD);
+			m_pVideo->m_funcSetRenderMode(m_pVideo->m_hPlayer, AV_RENDER_MODE::STANDARD);
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btnStop")) == 0)
 		{
@@ -259,29 +258,5 @@ void CAVPlayerWnd::ErrorCallback(void * userdata, int err, std::string strMsg)
 {
 }
 
-//void CAVPlayerWnd::OnFileSelected(bool bRet, std::wstring filePath)
-//{
-//	if (bRet && !filePath.empty())
-//	{
-//		wchar_t szUrl[MAX_PATH + 1] = { 0 };
-//		_tcscpy_s(szUrl, MAX_PATH, filePath.c_str());
-//		::PathStripPath(szUrl);
-//		m_pLabelName->SetText(szUrl);
-//		m_opts.video_type = VIDEO_TYPE::NORMAL_TYPE;
-//		//m_opts.bEnableAudio = false;
-//		//m_opts.bEnableVideo = false;
-//		//m_opts.bGpuDecode = true;
-//		m_opts.strPath = CW2A(filePath.c_str(), CP_UTF8);
-//		//m_opts.hWnd = ::CreateWindowEx(WS_EX_APPWINDOW, L"#32770", L"VideoWnd", WS_POPUP | WS_VISIBLE, 0, 0, 400, 300, nullptr, nullptr, m_PaintManager.GetInstance(), nullptr);
-//		//m_opts.strPath = "rtmp://playrtmp.simope.com:1935/live/524622521d?liveID=100031600";
-//		//m_opts.strPath = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
-//		//m_opts.strPath = "rtmp://192.168.1.32:1935/live/32";
-//		m_pVideo->m_funcOpen(m_pVideo->m_hPlayer, m_opts, true);
-//		m_pBtnPlay->SetVisible(false);
-//		m_pBtnPause->SetVisible();
-//		m_pBtnStop->SetEnabled();
-//		m_pVideoLayout->SetVisible();
-//	}
-//}
 
 

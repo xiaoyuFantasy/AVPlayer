@@ -116,7 +116,7 @@ void CSDLRender::DestoryRender()
 		SDL_DestroyTexture(m_pTexture);
 }
 
-bool CSDLRender::SetRenderMode(RENDER_MODE)
+bool CSDLRender::SetRenderMode(AV_RENDER_MODE)
 {
 	return false;
 }

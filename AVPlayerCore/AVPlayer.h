@@ -86,7 +86,7 @@ extern "C" {
 	EXPORT_API double Buffering(HANDLE handle);
 
 	// äÖÈ¾Ä£ÐÍ
-	EXPORT_API void SetRenderMode(HANDLE handle, RENDER_MODE mode);
+	EXPORT_API void SetRenderMode(HANDLE handle, AV_RENDER_MODE mode);
 
 	//Ëõ·Å
 	EXPORT_API void SetScale(HANDLE handle, float factor);

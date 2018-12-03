@@ -101,7 +101,7 @@ void CD3DRender::DestoryRender()
 		m_pDirect3D9->Release();
 }
 
-bool CD3DRender::SetRenderMode(RENDER_MODE)
+bool CD3DRender::SetRenderMode(AV_RENDER_MODE)
 {
 	return false;
 }

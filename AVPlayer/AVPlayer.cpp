@@ -117,11 +117,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	else
 	{
-		/*CVideoWnd* pVideoWnd = new CVideoWnd();
-		pVideoWnd->Create(nullptr, L"AVPlayer", UI_WNDSTYLE_DIALOG, UI_WNDSTYLE_EX_DIALOG, 0, 0, 500, 500);
-		pVideoWnd->CenterWindow();
-		pVideoWnd->ShowModal();*/
-
 		CAVPlayerWnd player;
 		player.SetCmdLine(mapCmd);
 		player.Create(NULL, L"AVPlayer", UI_WNDSTYLE_FRAME, UI_WNDSTYLE_EX_FRAME);

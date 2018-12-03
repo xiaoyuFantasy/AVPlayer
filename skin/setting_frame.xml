@@ -27,8 +27,21 @@
                 <Button name="btn_browse" padding="10,0,10,0" text="浏览" textcolor="0xFFEDECEC" bkcolor="0xFF2782dc" width="30" height="30" />
             </HorizontalLayout>
             <HorizontalLayout height="30" padding="10,10,10,0">
-                <Option name="normal_render" padding="100,0,0,0" height="30" text="普通模式" selectedbkcolor="0xFF00FF00" selected="true" bkcolor="0xFFFFFFFF" group="render_group" />
-                <Option name="3D_render" padding="0,0,100,0" height="30" text="全景模式" selectedbkcolor="0xFF00FF00" bkcolor="0xFFFFFFFF" group="render_group" />
+                <Option name="normal_render" padding="10,0,0,0" height="30" text="普通模式" selectedbkcolor="0xFF00FF00" selected="true" bkcolor="0xFFFFFFFF" group="render_group" />
+                <Option name="3D_render" padding="0,0,10,0" height="30" text="全景模式" selectedbkcolor="0xFF00FF00" bkcolor="0xFFFFFFFF" group="render_group" />
+                <Combo name="combo_decode_type" width="150" bkcolor="#FF2E3951" itemalign="center" bordersize="1" bordercolor="0xFFFFFFFF" itembkcolor="#FF2E3951" itemtextcolor="0xFFFFFFFF" itemselectedbkcolor="#FF2E3951" itemselectedtextcolor="0xFFFFFFFF" >
+                    <ListLabelElement text="软解" selected="true" />
+                    <ListLabelElement text="VDPAU" />
+                    <ListLabelElement text="CUDA" />
+                    <ListLabelElement text="VAAPI" />
+                    <ListLabelElement text="DXVA2" />
+                    <ListLabelElement text="QSV" />
+                    <ListLabelElement text="VIDEOTOOLBOX" />
+                    <ListLabelElement text="D3D11VA" />
+                    <ListLabelElement text="DRM" />
+                    <ListLabelElement text="OPENCL" />
+                    <ListLabelElement text="MEDIACODEC" />
+                </Combo>
             </HorizontalLayout>
             <Control />
             <HorizontalLayout height="60">

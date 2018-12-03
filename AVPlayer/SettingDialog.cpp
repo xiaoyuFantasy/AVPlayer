@@ -33,6 +33,7 @@ void CSettingDialog::InitWindow()
 {
 	m_pEditPath = (CEditUI*)m_PaintManager.FindControl(L"edit_path");
 	m_pOptRender = (COptionUI*)m_PaintManager.FindControl(L"normal_render");
+	m_pDecodeType = (CComboUI*)m_PaintManager.FindControl(L"combo_decode_type");
 }
 
 void CSettingDialog::Notify(TNotifyUI & msg)
@@ -56,7 +57,7 @@ void CSettingDialog::Notify(TNotifyUI & msg)
 		{
 			Close();
 			if (m_funCallback)
-				m_funCallback(std::wstring(m_pEditPath->GetText()), m_pOptRender->IsSelected() ? 1 : 2);
+				m_funCallback(std::wstring(m_pEditPath->GetText()), m_pOptRender->IsSelected() ? 1 : 2, m_pDecodeType->GetCurSel());
 		}
 		else if (_tcscmp(msg.pSender->GetName(), _T("btn_cancel")) == 0)
 			Close();
@@ -65,7 +66,7 @@ void CSettingDialog::Notify(TNotifyUI & msg)
 	__super::Notify(msg);
 }
 
-void CSettingDialog::SetCallback(std::function<void(std::wstring wstrPath, int type)> callback)
+void CSettingDialog::SetCallback(CallbackFunc callback)
 {
 	m_funCallback = callback;
 }

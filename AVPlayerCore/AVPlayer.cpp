@@ -96,7 +96,7 @@ EXPORT_API void Stop(HANDLE handle)
 	player->Stop();
 }
 
-EXPORT_API void SetRenderMode(HANDLE handle, RENDER_MODE mode)
+EXPORT_API void SetRenderMode(HANDLE handle, AV_RENDER_MODE mode)
 {
 	CAVPlayerImpl *player = (CAVPlayerImpl *)handle;
 	player->SetRenderMode(mode);

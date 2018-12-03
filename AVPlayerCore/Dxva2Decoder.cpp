@@ -104,6 +104,23 @@ typedef struct DXVA2SurfaceWrapper {
 	IDirectXVideoDecoder *decoder;
 } DXVA2SurfaceWrapper;
 
+
+void NV12_YUV420P(const unsigned char* image_src, unsigned char* image_dst, int image_width, int image_height)
+{
+	unsigned char* p = image_dst;
+	memcpy(p, image_src, image_width * image_height * 3 / 2);
+	const unsigned char* pNV = image_src + image_width * image_height;
+	unsigned char* pU = p + image_width * image_height;
+	unsigned char* pV = p + image_width * image_height + ((image_width * image_height) >> 2);
+	for (int i = 0; i < (image_width * image_height) / 2; i++)
+	{
+		if ((i % 2) == 0)
+			*pU++ = *(pNV + i);
+		else
+			*pV++ = *(pNV + i);
+	}
+}
+
 static void dxva2_destroy_decoder(AVCodecContext *s)
 {
 	InputStream  *ist = (InputStream *)s->opaque;
@@ -252,13 +269,13 @@ static int dxva2_retrieve_data(AVCodecContext *s, AVFrame *frame)
 	int loglevel = (ist->hwaccel_id == HWACCEL_AUTO) ? AV_LOG_VERBOSE : AV_LOG_ERROR;
 
 	EnterCriticalSection(&ctx->cs);
-
+	// render surface
 	if (ctx->m_pBackBuffer)
 	{
 		ctx->m_pBackBuffer->Release();
 		ctx->m_pBackBuffer = NULL;
 	}
-
+	
 	ctx->d3d9device->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 	ctx->d3d9device->BeginScene();
 	ctx->d3d9device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &ctx->m_pBackBuffer);
@@ -267,6 +284,44 @@ static int dxva2_retrieve_data(AVCodecContext *s, AVFrame *frame)
 	ctx->d3d9device->Present(NULL, NULL, NULL, NULL);
 
 	LeaveCriticalSection(&ctx->cs);
+	return 0;
+}
+
+static int dxva2_retrieve_data2(AVCodecContext *s, AVFrame *dst, AVFrame *src)
+{
+	LPDIRECT3DSURFACE9 surface = (LPDIRECT3DSURFACE9)src->data[3];
+	InputStream        *ist = (InputStream *)s->opaque;
+	DXVA2Context       *ctx = (DXVA2Context *)ist->hwaccel_ctx;
+	int loglevel = (ist->hwaccel_id == HWACCEL_AUTO) ? AV_LOG_VERBOSE : AV_LOG_ERROR;
+	D3DSURFACE_DESC    surfaceDesc;
+	D3DLOCKED_RECT     LockedRect;
+	HRESULT            hr;
+	int i, err, nb_planes;
+	int lock_flags = 0;
+
+	nb_planes = av_pix_fmt_count_planes((AVPixelFormat)src->format);
+	hr = IDirect3DSurface9_GetDesc(surface, &surfaceDesc);
+	if (FAILED(hr)) {
+		av_log(ctx, AV_LOG_ERROR, "Error getting a surface description\n");
+		return AVERROR_UNKNOWN;
+	}
+
+	if (!(AV_HWFRAME_MAP_READ & AV_HWFRAME_MAP_WRITE))
+		lock_flags |= D3DLOCK_READONLY;
+	if (AV_HWFRAME_MAP_READ & AV_HWFRAME_MAP_OVERWRITE)
+		lock_flags |= D3DLOCK_DISCARD;
+
+	hr = surface->LockRect(&LockedRect, NULL, lock_flags);
+	if (FAILED(hr)) {
+		av_log(ctx, AV_LOG_ERROR, "Unable to lock DXVA2 surface\n");
+		return AVERROR_UNKNOWN;
+	}
+
+	//把纹理拷贝到内存
+	
+
+
+	IDirect3DSurface9_UnlockRect(surface);
 
 	return 0;
 }
@@ -651,4 +706,9 @@ int dxva2_init(AVCodecContext *s, HWND hwnd)
 int dxva2_retrieve_data_call(AVCodecContext *s, AVFrame *frame)
 {
 	return dxva2_retrieve_data(s, frame);
+}
+
+int dxva2_retrieve_data_call2(AVCodecContext * s, AVFrame * dst, AVFrame * src)
+{
+	return dxva2_retrieve_data2(s, dst, src);
 }

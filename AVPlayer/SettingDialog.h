@@ -1,6 +1,8 @@
 #pragma once
 #include <functional>
 
+using CallbackFunc = std::function<void(std::wstring wstrPath, int video_type, int decode_type)>;
+
 class CSettingDialog : public WindowImplBase
 {
 public:
@@ -15,7 +17,7 @@ public:
 	void InitWindow();
 	void Notify(TNotifyUI &msg);
 
-	void SetCallback(std::function<void(std::wstring wstrPath, int type)> callback);
+	void SetCallback(CallbackFunc callback);
 
 protected:
 	void OnFileSelected(bool bRet, std::wstring filePath);
@@ -23,6 +25,7 @@ protected:
 private:
 	COptionUI*	m_pOptRender = nullptr;
 	CEditUI*	m_pEditPath = nullptr;
-	std::function<void(std::wstring wstrPath, int type)> m_funCallback;
+	CComboUI*	m_pDecodeType = nullptr;
+	CallbackFunc m_funCallback;
 };
 

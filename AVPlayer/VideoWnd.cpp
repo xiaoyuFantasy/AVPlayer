@@ -172,10 +172,6 @@ void CVideoWnd::Play()
 	m_opts.user_data = this;
 	m_opts.hInstance = m_PaintManager.GetInstance();
 	m_opts.funcEvent = CVideoWnd::FuncPlayerEvent;
-	m_opts.video_type = (VIDEO_TYPE)m_nVideoType;
-	m_opts.bEnableAudio = false;
-
-	m_opts.strPath = CW2A(m_wstrPlayUrl.c_str(), CP_UTF8);
 	::PostMessage(m_hWnd, PLAYER_MSG_OPEN, NULL, NULL);
 }
 
@@ -316,27 +312,41 @@ void CVideoWnd::ParseCommandLine()
 	m_bChildWnd = itor->second.compare(L"true") == 0 ? true : false;
 	if (!m_bChildWnd)
 		return;
-	
-	itor = m_mapCmd.find(L"/video_type");
-	if (itor == m_mapCmd.end())
-		goto PARSE_FAILED;
-	m_nVideoType = stoi(itor->second);
-
-	itor = m_mapCmd.find(L"/video_index");
-	if (itor == m_mapCmd.end())
-		goto PARSE_FAILED;
-	m_nIndex = stoi(itor->second);
-
-	itor = m_mapCmd.find(L"/play_url");
-	if (itor == m_mapCmd.end())
-		goto PARSE_FAILED;
-	m_wstrPlayUrl = itor->second;
 
 	itor = m_mapCmd.find(L"/channel_name");
 	if (itor == m_mapCmd.end())
 		goto PARSE_FAILED;
 	m_wstrChannelName = itor->second;
 
+	itor = m_mapCmd.find(L"/video_index");
+	if (itor == m_mapCmd.end())
+		goto PARSE_FAILED;
+	m_nIndex = stoi(itor->second);
+
+	//opt
+	itor = m_mapCmd.find(L"/video_type");
+	if (itor == m_mapCmd.end())
+		goto PARSE_FAILED;
+	m_opts.video_type = (AV_VIDEO_TYPE)stoi(itor->second);
+
+	itor = m_mapCmd.find(L"/decode_type");
+	if (itor == m_mapCmd.end())
+		goto PARSE_FAILED;
+	m_opts.decode_type = (AV_DECODE_TYPE)stoi(itor->second);
+
+	itor = m_mapCmd.find(L"/play_url");
+	if (itor == m_mapCmd.end())
+		goto PARSE_FAILED;
+	m_opts.strPath = CW2A(itor->second.c_str(), CP_UTF8);
+
+	itor = m_mapCmd.find(L"/enable_video");
+	if (itor != m_mapCmd.end())
+		m_opts.bEnableVideo = stoi(itor->second) == 0 ? false : true;
+	
+	itor = m_mapCmd.find(L"/enable_audio");
+	if (itor != m_mapCmd.end())
+		m_opts.bEnableAudio = stoi(itor->second) == 0 ? false : true;
+	
 	return;
 PARSE_FAILED:
 	Close();

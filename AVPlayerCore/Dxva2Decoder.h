@@ -145,3 +145,4 @@ typedef struct InputStream {
 int dxva2_init(AVCodecContext *s, HWND hwnd);
 void dxva2_uninit(AVCodecContext *s);
 int dxva2_retrieve_data_call(AVCodecContext *s, AVFrame *frame);
+int dxva2_retrieve_data_call2(AVCodecContext *s, AVFrame *dst, AVFrame *src);

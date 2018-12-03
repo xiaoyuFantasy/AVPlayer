@@ -23,7 +23,7 @@ public:
 	bool InitRender() override;
 	bool CreateRender(HWND hWnd, int nWidth, int nHeight, int pixelFormat = AV_PIX_FMT_YUV420P) override;
 	void DestoryRender() override;
-	bool SetRenderMode(RENDER_MODE) override;
+	bool SetRenderMode(AV_RENDER_MODE) override;
 	void SetRenderSize(int width, int height) override;
 	void RenderFrameData(AVFrame *pFrame) override;
 	void SetScale(float factor) override;
@@ -33,7 +33,7 @@ public:
 
 protected:
 	bool InitGL();
-	void SetVerticesModel(RENDER_MODE mode = PANO2D);
+	void SetVerticesModel(AV_RENDER_MODE mode = PANO2D);
 	bool CreateSwsCtx();
 
 private:
@@ -44,7 +44,7 @@ private:
 	bool		m_bKeepAspect;// 是否启用宽高比.
 	float		m_fWindowAspect;// 宽高比.
 	RECT		m_rcLastClient;// 最后位置参数.
-	RENDER_MODE	m_renderMode = RENDER_MODE::PANO2D;
+	AV_RENDER_MODE	m_renderMode = AV_RENDER_MODE::PANO2D;
 	WNDPROC		m_oldWndProc;
 	//opengl
 	HWND		m_hWnd = nullptr; // 保存窗口句柄.
