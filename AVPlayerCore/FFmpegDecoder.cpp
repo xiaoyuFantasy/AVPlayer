@@ -76,6 +76,8 @@ int CFFmpegDecoder::DecodeFrame(FramePtr& pFrame, PacketQueue & queue)
 				av_log(NULL, AV_LOG_ERROR, "video codec send packet error. err:%d, %s", ret, szErr);
 			}
 		}
+		else
+			return ret;
 	}
 
 	return ret;

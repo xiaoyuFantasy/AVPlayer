@@ -41,14 +41,14 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 				break;
 			else if (ret == AVERROR_BUFFER_TOO_SMALL)
 			{
-				av_log(NULL, AV_LOG_ERROR, "avformat_open_input. failed!!! buffer too small ");
+				av_log(NULL, AV_LOG_ERROR, "open input failed!!! buffer too small ");
 				continue;
 			}
 			else
 			{
 				char szErr[AV_ERROR_MAX_STRING_SIZE];
 				av_strerror(ret, szErr, AV_ERROR_MAX_STRING_SIZE);
-				av_log(NULL, AV_LOG_ERROR, "avformat_open_input. err_code:%d, msg:%s", ret, szErr);
+				av_log(NULL, AV_LOG_ERROR, "open input err_code:%d, msg:%s", ret, szErr);
 				break;
 			}
 		}
@@ -135,7 +135,7 @@ bool CAVPlayerImpl::Open(PLAYER_OPTS & opts, bool bSync)
 
 		PlayerErrorSt err;
 		err.nCode = ret;
-		err.strErrMsg = "open input failed!!! url:" + m_opts.strPath;
+		err.strErrMsg = "open input failed!!! url:";
 		CallbackEvent(PlayerError, &err);
 		m_bOpening = false;
 		return false;
@@ -208,7 +208,7 @@ bool CAVPlayerImpl::Play()
 			if (m_bAudioOpen && packet->stream_index == m_nAudioIndex)
 				m_audioPlayer.PushPacket(move(packet));
 			else if (m_bVideoOpen && packet->stream_index == m_nVideoIndex)
-				m_videoPlayer.PushPacket(move(packet));				
+				m_videoPlayer.PushPacket(move(packet));
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}

@@ -163,7 +163,7 @@ bool CVideoPlayer::CreateDecoder()
 	AVCodec* pCodec = avcodec_find_decoder(m_pStream->codecpar->codec_id);
 	if (!pCodec)
 	{
-		av_log(NULL, AV_LOG_ERROR, "Can Not Found AVCodec.");
+		av_log(NULL, AV_LOG_ERROR, "Can Not Found Codec.");
 		return false;
 	}
 
@@ -172,7 +172,7 @@ bool CVideoPlayer::CreateDecoder()
 
 	if (!(m_pCodecCtx = avcodec_alloc_context3(pCodec)))
 	{
-		av_log(NULL, AV_LOG_ERROR, "Alloc AVCodecContext Failed. err:%d", AVERROR(ENOMEM));
+		av_log(NULL, AV_LOG_ERROR, "Alloc Context Failed. err:%d", AVERROR(ENOMEM));
 		return false;
 	}
 
@@ -181,14 +181,14 @@ bool CVideoPlayer::CreateDecoder()
 	{
 		char szErr[AV_ERROR_MAX_STRING_SIZE];
 		av_strerror(ret, szErr, AV_ERROR_MAX_STRING_SIZE);
-		av_log(NULL, AV_LOG_ERROR, "AVCodecParameters To AVCodecContext Failed. err:%d, %s", ret, szErr);
+		av_log(NULL, AV_LOG_ERROR, "To Context Failed. err:%d, %s", ret, szErr);
 		return false;
 	}
 
 	if (m_opts.decode_type != DECODE_TYPE_NONE)
 	{
 		bool bGPUDecode = false;
-		if (/*NORMAL_TYPE == m_opts.video_type &&*/ DECODE_TYPE_DXVA2 == m_opts.decode_type)
+		if (NORMAL_TYPE == m_opts.video_type && DECODE_TYPE_DXVA2 == m_opts.decode_type)
 		{
 			m_pCodecCtx->thread_count = 1;
 			InputStream *ist = new InputStream();
@@ -260,11 +260,12 @@ void CVideoPlayer::DecodeThread()
 			if (m_pDecoder && m_pDecoder->DecodeFrame(pFrame, m_queuePacket) >= 0)
 			{
 				DWORD dwDecodeEnd = ::GetTickCount();
-				if (pFrame->format == AV_PIX_FMT_DXVA2_VLD /*&& m_opts.video_type == NORMAL_TYPE*/)
+				if (pFrame->format == AV_PIX_FMT_DXVA2_VLD && m_opts.video_type == NORMAL_TYPE)
 				{
-					if (m_opts.video_type == NORMAL_TYPE)
+					HwRenderFrame(pFrame.get());
+					/*if (m_opts.video_type == NORMAL_TYPE)
 					{
-						HwRenderFrame(pFrame.get());
+						
 					}
 					else
 					{
@@ -273,7 +274,7 @@ void CVideoPlayer::DecodeThread()
 						dxva2_retrieve_data_call2(m_pCodecCtx, pTempFrame.get(), pFrame.get());
 						av_frame_copy_props(pTempFrame.get(), pFrame.get());
 						m_queueFrame.Push(std::move(pTempFrame));
-					}
+					}*/
 				}
 				else
 				{
@@ -353,6 +354,9 @@ bool CVideoPlayer::CreateRender()
 
 void CVideoPlayer::RenderFrame(AVFrame *pFrame)
 {
+	if (!pFrame)
+		return;
+
 	double video_pts = 0; //当前视频的pts
 	if (pFrame->pts == AV_NOPTS_VALUE && pFrame->opaque && *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE)
 		video_pts = *(int64_t *)pFrame->opaque;
